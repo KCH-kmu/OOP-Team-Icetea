@@ -1,0 +1,162 @@
+161
+1 Lightweight
+2 Deja Vu
+3 Kindred
+4 Spine Chill
+5 Slippery Meat
+6 Premonition
+7 No One Left Behind
+8 Plunderer's Instinct
+9 Dark Sense
+10 We'll Make It
+11 This Is Not Happening
+12 Small Game
+13 Resilience
+14 Hope
+15 Bond
+16 Prove Thyself
+17 Leader
+18 Quick & Quiet
+19 Sprint Burst
+20 Adrenaline
+21 Empathy
+22 Botany Knowledge
+23 Self-Care
+24 Iron Will
+25 Calm Spirit
+26 Saboteur
+27 Balanced Landing
+28 Urban Evasion
+29 Streetwise
+30 Open-Handed
+31 Up the Ante
+32 Ace in the Hole
+33 Technician
+34 Lithe
+35 Alert
+36 We're Gonna Live Forever
+37 Dead Hard
+38 No Mither
+39 Dance With Me
+40 Windows of Opportunity
+41 Boil Over
+42 Diversion
+43 Deliverance
+44 Autodidact
+45 Breakdown
+46 Aftercare
+47 Distortion
+48 Solidarity
+49 Poised
+50 Head On
+51 Lucky Break
+52 Any Means Necessary
+53 Breakout
+54 Off the Record
+55 Red Herring
+56 For the People
+57 Visionary
+58 Desperate Measures
+59 Built to Last
+60 Appraisal
+61 Deception
+62 Power Struggle
+63 Fast Track
+64 Smash Hit
+65 Self-Preservation
+66 Clairvoyance
+67 Boon: Circle of Healing
+68 Boon: Shadow Step
+69 Overcome
+70 Corrective Action
+71 Boon: Exponential
+72 Inner Focus
+73 Residual Manifest
+74 Overzealous
+75 Potential Energy
+76 Fogwise
+77 Quick Gambit
+78 Friendly Competition
+79 Teamwork: Power of Two
+80 Cut Loose
+81 Blood Rush
+82 Teamwork: Collective Stealth
+83 Background Player
+84 Troubleshooter
+85 Made for This
+86 Scavenger
+87 Invocation: Weaving Spiders
+88 Strength in Shadows
+89 Wicked
+90 Invocation: Treacherous Crows
+91 Clean Break
+92 Shoulder the Burden
+93 Do No Harm
+94 Duty of Care
+95 Rapid Response
+96 Road Life
+97 One-Two-Three-Four!
+98 Ghost Notes
+99 Sole Survivor
+100 Object of Obsession
+101 Decisive Strike
+102 Left Behind
+103 Borrowed Time
+104 Unbreakable
+105 Wake Up!
+106 Pharmacy
+107 Vigil
+108 Tenacity
+109 Detective's Hunch
+110 Stake Out
+111 Flip-Flop
+112 Buckle Up
+113 Bettle of Man
+114 Babysitter
+115 Camaraderie
+116 Second Wind
+117 Better Together
+118 Fixated
+119 Inner Strength
+120 Soul Guard
+121 Blood Pact
+122 Repressed Alliance
+123 Bite the Bullet
+124 Flashbang
+125 Rookie Spirit
+126 Counterforce
+127 Resurgence
+128 Blast Mine
+129 Parental Guidance
+130 Empathic Connection
+131 Boon: Dark Theory
+132 Wiretap
+133 Reactive Healing
+134 Low Profile
+135 Better than New
+136 Reassurance
+137 Hyperfocus
+138 Dramaturgy
+139 Scene Partner
+140 Plot Twist
+141 Lucky Star
+142 Chemical Trap
+143 Light-Footed
+144 Boon: Illumination
+145 Champion of Light
+146 Deadline
+147 Mirrored Illusion
+148 Bardic Inspiration
+149 Still Sight
+150 Finesse
+151 Hardened
+152 Specialist
+153 Eyes of Belmont
+154 Exultation
+155 Moment of Glory
+156 Apocalyptic Ingenuity
+157 Come and Get Me!
+158 Teamwork: Toughen Up
+159 Conviction
+160 Last Stand
+161 Teamwork: Throw Down

@@ -130,9 +130,13 @@
   <ItemGroup>
     <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="QuestionData.cpp" />
+    <ClCompile Include="QuestionFeatures.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="QuestionData.h" />
+    <ClInclude Include="QuestionFeatures.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

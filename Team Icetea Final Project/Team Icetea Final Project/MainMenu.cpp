@@ -1,5 +1,6 @@
 #include "MainMenu.h"
 #include "Utils.h"
+#include "QuestionFeatures.h"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -83,6 +84,77 @@ string LoadLogoFromFile(string filename, int& outMaxWidth)
     return logo;
 }
 
+void ShowGameModeMenu(int logoWidth)
+{
+    string chooseList[2] = { "1. 몬스터 처치", "2. 무한모드" };
+    int focus = 1;
+    int getkey;
+
+    do
+    {
+        screenClear();
+
+        PrintCentered("=== 게임모드 ===", logoWidth);
+        cout << endl;
+
+        int maxMenuLen = 0;
+        for (const string& s : chooseList) {
+            int len = GetVisualLength(s) + 2; 
+            if (len > maxMenuLen) maxMenuLen = len;
+        }
+
+        int menuPadding = (logoWidth - maxMenuLen) / 2;
+        if (menuPadding < 0) menuPadding = 0;
+
+        int listSize = sizeof(chooseList) / sizeof(string);
+        for (int i = 0; i < listSize; i++)
+        {
+            for(int k=0; k<menuPadding; k++) cout << " ";
+
+            if (focus == i + 1)
+                cout << "> " << chooseList[i] << endl;
+            else
+                cout << "  " << chooseList[i] << endl;
+        }
+        cout << endl;
+
+        string footer = "방향키 : 이동  |  Enter키 : 선택  |  Esc키 : 뒤로 가기";
+        string separator = "----------------------------------------------------------------------";
+
+        PrintCentered(separator, logoWidth);
+        PrintCentered(footer, logoWidth);
+        PrintCentered(separator, logoWidth);
+
+        getkey = _getch();
+
+        if (getkey == 224) {
+            getkey = _getch();
+        }
+
+        if (getkey == KEY_UP)
+        {
+            focus--;
+            if (focus < 1) focus = listSize;
+        }
+        else if (getkey == KEY_DOWN)
+        {
+            focus++;
+            if (focus > listSize) focus = 1;
+        }
+        else if (getkey == KEY_ENTER)
+        {
+            screenClear();
+            cout << "추후 제작 예정입니다" << endl;
+            cout << "계속하려면 아무 키나 누르세요..." << endl;
+            _getch();
+        }
+        else if (getkey == KEY_ESC)
+        {
+            return;
+        }
+    } while (1);
+}
+
 void ShowMainMenu()
 {
     int logoWidth = 0;
@@ -149,9 +221,24 @@ void ShowMainMenu()
         else if (getkey == KEY_ENTER)
         {
             screenClear();
-            cout << "추후 추가될 부분입니다" << endl;
-            cout << "계속하려면 아무 키나 누르세요..." << endl;
-            _getch();
+            switch (focus)
+            {
+            case 1:
+            case 2:
+                cout << "추후 제작 예정입니다" << endl;
+                cout << "계속하려면 아무 키나 누르세요..." << endl;
+                _getch();
+                break;
+            case 3:
+                ShowGameModeMenu(logoWidth);
+                break;
+            case 4:
+                PracticeQuestionSearch();
+                break;
+            case 5:
+                PracticeQuestionMake();
+                break;
+            }
         }
         else if (getkey == KEY_ESC)
         {
@@ -159,3 +246,6 @@ void ShowMainMenu()
         }
     } while (1);
 }
+
+
+
