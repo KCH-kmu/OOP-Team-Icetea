@@ -37,5 +37,6 @@
 
 ### Custom Ignored Folders ###
 DBDDB(cbs)/
+.agents/
 
 # End of https://www.toptal.com/developers/gitignore/api/c++
