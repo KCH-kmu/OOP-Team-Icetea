@@ -26,11 +26,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MainMenu.cpp",
+              "DocumentMoniker": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\MainMenu.cpp",
+              "RelativeDocumentMoniker": "Team Icetea Final Project\\MainMenu.cpp",
+              "ToolTip": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\MainMenu.cpp",
+              "RelativeToolTip": "Team Icetea Final Project\\MainMenu.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-05-04T10:39:50.963Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -47,18 +60,6 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "MainMenu.cpp",
-              "DocumentMoniker": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\MainMenu.cpp",
-              "RelativeDocumentMoniker": "Team Icetea Final Project\\MainMenu.cpp",
-              "ToolTip": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\MainMenu.cpp",
-              "RelativeToolTip": "Team Icetea Final Project\\MainMenu.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-05-04T10:39:50.963Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 3,
               "Title": "main.cpp",
               "DocumentMoniker": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\main.cpp",
@@ -67,7 +68,8 @@
               "RelativeToolTip": "Team Icetea Final Project\\main.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-05-04T09:27:34.232Z"
+              "WhenOpened": "2026-05-04T09:27:34.232Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -79,7 +81,8 @@
               "RelativeToolTip": "Team Icetea Final Project\\Utils.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-05-04T09:27:38.231Z"
+              "WhenOpened": "2026-05-04T09:27:38.231Z",
+              "EditorCaption": ""
             }
           ]
         }

@@ -12,6 +12,7 @@ struct Question {
     string character; // 전승 캐릭터 (공용 포함)
     string desc;      // 설명 (아직 미구현 시 빈칸)
     string keyword;   // 키워드 (아직 미구현 시 빈칸)
+    vector<string> wrongChoices; // NEW
 };
 
 // 퍽 데이터를 저장할 전역 벡터 (외부에서 접근 가능하게 extern 선언)

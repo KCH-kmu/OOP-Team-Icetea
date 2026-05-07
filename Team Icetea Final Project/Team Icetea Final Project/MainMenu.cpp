@@ -224,10 +224,11 @@ void ShowMainMenu()
             switch (focus)
             {
             case 1:
+                // NEW
+                PracticeQuestionSolve();
+                break;
             case 2:
-                cout << "추후 제작 예정입니다" << endl;
-                cout << "계속하려면 아무 키나 누르세요..." << endl;
-                _getch();
+                ExamQuestionSolve();
                 break;
             case 3:
                 ShowGameModeMenu(logoWidth);
