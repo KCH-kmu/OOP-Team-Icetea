@@ -26,8 +26,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "QuestionData.cpp",
+              "DocumentMoniker": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\QuestionData.cpp",
+              "RelativeDocumentMoniker": "Team Icetea Final Project\\QuestionData.cpp",
+              "ToolTip": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\QuestionData.cpp",
+              "RelativeToolTip": "Team Icetea Final Project\\QuestionData.cpp",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-05-04T10:39:49.628Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
@@ -42,21 +55,7 @@
               "RelativeToolTip": "Team Icetea Final Project\\MainMenu.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-05-04T10:39:50.963Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "QuestionData.cpp",
-              "DocumentMoniker": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\QuestionData.cpp",
-              "RelativeDocumentMoniker": "Team Icetea Final Project\\QuestionData.cpp",
-              "ToolTip": "C:\\Users\\green\\OneDrive\\Desktop\\KMU\\2026-1\\OOP\\OOP-Team-Icetea\\Team Icetea Final Project\\Team Icetea Final Project\\QuestionData.cpp",
-              "RelativeToolTip": "Team Icetea Final Project\\QuestionData.cpp",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-05-04T10:39:49.628Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-04T10:39:50.963Z"
             },
             {
               "$type": "Document",
@@ -68,8 +67,7 @@
               "RelativeToolTip": "Team Icetea Final Project\\main.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-05-04T09:27:34.232Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-04T09:27:34.232Z"
             },
             {
               "$type": "Document",
@@ -81,8 +79,7 @@
               "RelativeToolTip": "Team Icetea Final Project\\Utils.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-05-04T09:27:38.231Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-04T09:27:38.231Z"
             }
           ]
         }
