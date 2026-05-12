@@ -1,0 +1,4 @@
+﻿Q.DataID,Q.Desc,R.Answer,W.Answer1,W.Answer2,W.Answer3,Difficulty
+1,이 문제는 테스트 문제입니다.,여기가 답이에요,"하, 이건 답이 아니지","그가 말했다. ""이 답안은 정답이 아니다.""",올바르지 않은 대답입니다.,1
+2,두번째 테스트문제. 난도 중,답임,답아님,역시 답이 아닙니다.,Nope.,2
+3,"Difficulty Hard, Q1. 1+1?",2,Window 98,3,11,3
