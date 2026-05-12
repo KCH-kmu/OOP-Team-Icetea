@@ -1,4 +1,4 @@
-Q.DataID,Q.Desc,R.Answer,W.Answer1,W.Answer2,W.Answer3,Difficulty
+﻿Q.DataID,Q.Desc,R.Answer,W.Answer1,W.Answer2,W.Answer3,Difficulty
 820000,"다음 중 문법에 맞는 식별자가 아닌 것은?","2spams","spAms","spam","spam4U",1
 820001,"파이썬에서 사용자의 입력을 받기 위한 내장 함수는 무엇인가?","input","read","enter","malloc",1
 820002,"파이썬의 내장 데이터 타입이 아닌 것은?","rational","int","float","string",1
