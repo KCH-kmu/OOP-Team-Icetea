@@ -39,4 +39,21 @@
 DBDDB(cbs)/
 .agents/
 
+### Visual Studio Temp & Build Files ###
+.vs/
+x64/
+Debug/
+Release/
+*.ipch
+*.aps
+*.ncb
+*.opendb
+*.sdf
+*.user
+*.userosscache
+*.sln.docstates
+
+### Office Temp Files ###
+~$*
+
 # End of https://www.toptal.com/developers/gitignore/api/c++
