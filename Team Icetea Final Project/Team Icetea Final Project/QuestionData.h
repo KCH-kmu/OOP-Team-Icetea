@@ -12,6 +12,7 @@ struct Question {
     string character; // 전승 캐릭터 (공용 포함)
     string desc;      // 설명 (아직 미구현 시 빈칸)
     string keyword;   // 키워드 (아직 미구현 시 빈칸)
+    string commentary; // 문제 해설을 저장할 변수
     vector<string> wrongChoices; // NEW
 };
 
