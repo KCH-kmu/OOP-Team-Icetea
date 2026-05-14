@@ -1,5 +1,0 @@
-﻿  QuestionFeatures.cpp
-C:\Users\sub06\OneDrive\Desktop\oop team icetea git\OOP-Team-Icetea\Team Icetea Final Project\Team Icetea Final Project\QuestionFeatures.cpp(263,24): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\sub06\OneDrive\Desktop\oop team icetea git\OOP-Team-Icetea\Team Icetea Final Project\Team Icetea Final Project\QuestionFeatures.cpp(579,1): warning C4102: 'FinalEnd': 참조되지 않은 레이블입니다.
-C:\Users\sub06\OneDrive\Desktop\oop team icetea git\OOP-Team-Icetea\Team Icetea Final Project\Team Icetea Final Project\QuestionFeatures.cpp(779,1): warning C4102: 'FinalScore': 참조되지 않은 레이블입니다.
-  Team Icetea Final Project.vcxproj -> C:\Users\sub06\OneDrive\Desktop\oop team icetea git\OOP-Team-Icetea\Team Icetea Final Project\x64\Debug\Team Icetea Final Project.exe
