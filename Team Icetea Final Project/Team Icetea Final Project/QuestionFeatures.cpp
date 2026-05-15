@@ -5,17 +5,17 @@
 #include <string>
 #include <vector>
 #include <algorithm> // min, max 사용
-#include <ctime> // NEW  time() 사용
-#include <cstdlib> // NEW  rand(), srand() 사용
+#include <ctime> // time() 사용
+#include <cstdlib> // rand(), srand() 사용
 #include <filesystem> // 파일 목록 탐색
 #include <random>
 #include <fstream>
 #include <sstream>
 
 using namespace std;
-namespace fs = std::filesystem; // NEW
+namespace fs = std::filesystem;
 
-// CSV의 한 줄을 파싱하는 함수 (사용자 정의 규칙 적용) // NEW
+// CSV의 한 줄을 파싱하는 함수 (사용자 정의 규칙 적용)
 vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
     vector<string> result;
     string cell;
@@ -67,11 +67,11 @@ vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
     return result;
 }
 
-// 폴더 내의 CSV 파일 목록을 탐색하여 과목 선택 메뉴 출력 // NEW
+// 폴더 내의 CSV 파일 목록을 탐색하여 과목 선택 메뉴 출력
 string SelectSubjectMenu() {
     vector<pair<string, string>> subjects; // 과목코드.이름, 전체경로
 
-    // 현재 디렉토리에서 .csv 확장자 파일만 수집 // NEW
+    // 현재 디렉토리에서 .csv 확장자 파일만 수집
     string folderPath = "./QuestionData";
 
     // 폴더가 없는 경우 알림
@@ -479,19 +479,18 @@ void PracticeQuestionSolve()
         if (line.empty()) continue;
         vector<string> fields = ParseCSVLine(line, file);
 
-        // 최소한 문제(1)와 정답(2)은 있어야 하므로 조건을 3 이상으로 설정
-        if (fields.size() >= 3) {
+        if (fields.size() >= 7) { // 최소 난이도 칸까지는 있어야 함
             Question q;
             q.desc = fields[1];
-            q.nameKr = fields[2];
-
-            // 오답 필드들이 존재하는지 체크하며 대입
-            q.nameEn = (fields.size() > 3) ? fields[3] : "";
+            q.nameKr = fields[2];    // 정답 (OX일 때 'O' 또는 'X')
+            q.nameEn = fields[3];    // 오답 (OX일 때 'X' 또는 'O')
             q.character = (fields.size() > 4) ? fields[4] : "";
             q.keyword = (fields.size() > 5) ? fields[5] : "";
 
-            // 해설 필드(인덱스 7)가 있는지 확인
-            if (fields.size() >= 8 && !fields[7].empty()) {
+            // 난이도 저장 (문자열 "1"을 정수 1로 변환)
+            q.level = stoi(fields[6]);
+
+            if (fields.size() >= 8) {
                 q.commentary = fields[7];
             }
             else {
@@ -512,11 +511,23 @@ void PracticeQuestionSolve()
     int score = 0;
     for (int i = 0; i < (int)quizList.size(); i++) {
         // 보기를 생성하고 섞음
-        vector<string> options = { quizList[i].nameKr, quizList[i].nameEn, quizList[i].character, quizList[i].keyword };
-        shuffle(options.begin(), options.end(), g);
+        vector<string> options;
+        int maxChoices = 0;
 
-        int choiceFocus = 0; // 현재 어떤 보기를 가리키고 있는지
+        if (quizList[i].level == 1) {
+            // O가 위로, X가 아래로 가게 고정
+            options = { "O", "X" };
+            maxChoices = 2;
+        }
+        else {
+            options = { quizList[i].nameKr, quizList[i].nameEn, quizList[i].character, quizList[i].keyword };
+            random_device rd;
+            mt19937 g(rd());
+            shuffle(options.begin(), options.end(), g);
+            maxChoices = 4;
+        }
 
+        int focus = 0; // 현재 어떤 보기를 가리키고 있는지
         bool answered = false;
 
         while (!answered) {
@@ -527,8 +538,8 @@ void PracticeQuestionSolve()
             cout << "----------------------------------------" << endl;
 
             // 보기를 출력하며 현재 포커스 된 항목 앞에 '>' 표시
-            for (int k = 0; k < 4; k++) {
-                if (k == choiceFocus) cout << "> " << k + 1 << ". " << options[k] << endl;
+            for (int k = 0; k < maxChoices; k++) {
+                if (k == focus) cout << "> " << k + 1 << ". " << options[k] << endl;
                 else {
                     cout << "  " << k + 1 << ". " << options[k] << endl;
                 }
@@ -541,15 +552,16 @@ void PracticeQuestionSolve()
             if (input == 224) { // 방향키 입력 처리
                 input = _getch();
                 if (input == KEY_UP) {
-                    choiceFocus = (choiceFocus - 1 + 4) % 4;
+                    focus = (focus - 1 + maxChoices) % maxChoices;
                 }
                 else if (input == KEY_DOWN) {
-                    choiceFocus = (choiceFocus + 1) % 4;
+                    focus = (focus + 1) % maxChoices;
                 }
             }
             else if (input == KEY_ENTER) {
-                // Enter를 누르면 현재 choiceFocus에 있는 답이 정답인지 확인
-                if (options[choiceFocus] == quizList[i].nameKr) {
+                answered = true;
+                // Enter를 누르면 현재 focus에 있는 답이 정답인지 확인
+                if (options[focus] == quizList[i].nameKr) {
                     cout << "\n[ 정답 ]" << endl;
                     score++;
                 }
@@ -614,21 +626,19 @@ void ExamQuestionSolve()
         if (line.empty()) continue;
         vector<string> fields = ParseCSVLine(line, file);
 
-        // 최소한 문제(1)와 정답(2)은 있어야 하므로 조건을 3 이상으로 설정
-        if (fields.size() >= 3) {
+        if (fields.size() >= 7) { // 최소 난이도 칸까지는 있어야 함
             Question q;
-            q.desc = fields[1];      
-            q.nameKr = fields[2];    
-            
-            // 오답 필드들이 존재하는지 체크하며 대입 (안전한 접근)
-            q.nameEn    = (fields.size() > 3) ? fields[3] : "";
+            q.desc = fields[1];
+            q.nameKr = fields[2];    // 정답 (OX일 때 'O' 또는 'X')
+            q.nameEn = fields[3];    // 오답 (OX일 때 'X' 또는 'O')
             q.character = (fields.size() > 4) ? fields[4] : "";
-            q.keyword   = (fields.size() > 5) ? fields[5] : "";
+            q.keyword = (fields.size() > 5) ? fields[5] : "";
 
-            // ★ 해설 필드(인덱스 7)가 있는지 확인
-            if (fields.size() >= 8 && !fields[7].empty()) {
-                q.commentary = fields[7];
-            } else {
+            // 난이도 저장 (문자열 "1"을 정수 1로 변환)
+            q.level = stoi(fields[6]);
+
+            if (fields.size() >= 8) q.commentary = fields[7];
+            else {
                 // 해설이 없으면 기본 문구 출력
                 q.commentary = "[ 등록된 해설이 없습니다. ]";
             }
@@ -668,19 +678,28 @@ void ExamQuestionSolve()
     time_t startTime = time(nullptr);
 
     for (int i = 0; i < (int)ExamQuestions.size(); i++) {
-        vector<string> options = { ExamQuestions[i].nameKr, ExamQuestions[i].nameEn, 
-                                   ExamQuestions[i].character, ExamQuestions[i].keyword };
-        shuffle(options.begin(), options.end(), g);
+        vector<string> options;
+        int maxChoices = 0;
+
+        if (ExamQuestions[i].level == 1) {
+            options = { "O", "X" };
+            maxChoices = 2;
+        }
+        else {
+            options = { ExamQuestions[i].nameKr, ExamQuestions[i].nameEn, ExamQuestions[i].character, ExamQuestions[i].keyword };
+            shuffle(options.begin(), options.end(), g);
+            maxChoices = 4;
+        }
 
         int focus = 0;
         bool answered = false;
 
         while (!answered) {
             screenClear();
-            cout << "=== 시험 진행 [" << i + 1 << " / " << examCount << "] ===" << endl;
+            cout << "=== 시험 [" << i + 1 << " / " << examCount << "] ===" << endl;
             cout << "\n " << ExamQuestions[i].desc << "\n" << endl;
 
-            for (int k = 0; k < 4; k++) {
+            for (int k = 0; k < maxChoices; k++) {
                 cout << (k == focus ? "> " : "  ") << k + 1 << ". " << options[k] << endl;
             }
             cout << "\n↑↓: 이동  Enter: 제출  ESC: 중단" << endl;
@@ -688,14 +707,14 @@ void ExamQuestionSolve()
             int key = _getch();
             if (key == 224) {
                 key = _getch();
-                if (key == 72) {
-                    focus = (focus - 1 + 4) % 4;
+                if (key == KEY_UP) {
+                    focus = (focus - 1 + maxChoices) % maxChoices;
                 }
-                else if (key == 80) {
-                    focus = (focus + 1) % 4;
+                else if (key == KEY_DOWN) {
+                    focus = (focus + 1) % maxChoices;
                 }
             }
-            else if (key == 13) {
+            else if (key == KEY_ENTER) {
                 if (options[focus] == ExamQuestions[i].nameKr) {
                     score++;
                 }
@@ -704,7 +723,7 @@ void ExamQuestionSolve()
                 }
                 answered = true; // 시험모드는 즉시 해설 없이 다음 문제로
             }
-            else if (key == 27) {
+            else if (key == KEY_ESC) {
                 return;
             }
         }
@@ -729,9 +748,18 @@ void ExamQuestionSolve()
 
     for (auto& rec : wrongRecord) {
         int idx = rec.first;
-        vector<string> options = { ExamQuestions[idx].nameKr, ExamQuestions[idx].nameEn, 
-                                   ExamQuestions[idx].character, ExamQuestions[idx].keyword };
-        shuffle(options.begin(), options.end(), g);
+        vector<string> options;
+        int maxChoices = 0;
+
+        if (ExamQuestions[idx].level == 1) {
+            options = { "O", "X" };
+            maxChoices = 2;
+        }
+        else {
+            options = { ExamQuestions[idx].nameKr, ExamQuestions[idx].nameEn, ExamQuestions[idx].character, ExamQuestions[idx].keyword };
+            shuffle(options.begin(), options.end(), g);
+            maxChoices = 4;
+        }
 
         int focus = 0;
         bool answered = false;
@@ -742,7 +770,7 @@ void ExamQuestionSolve()
             cout << "=== 오답 복습 (시험 때 선택: " << rec.second << ") ===" << endl;
             cout << "\n " << ExamQuestions[idx].desc << "\n" << endl;
 
-            for (int k = 0; k < 4; k++) {
+            for (int k = 0; k < maxChoices; k++) {
                 if (answered) {
                     if (options[k] == ExamQuestions[idx].nameKr) cout << "O ";
                     else if (k == focus && !isCorrect) cout << "X ";
@@ -764,10 +792,10 @@ void ExamQuestionSolve()
                 if (k == 224) {
                     k = _getch();
                     if (k == 72) {
-                        focus = (focus - 1 + 4) % 4;
+                        focus = (focus - 1 + maxChoices) % maxChoices;
                     }
                     else if (k == 80) {
-                        focus = (focus + 1) % 4;
+                        focus = (focus + 1) % maxChoices;
                     }
                 } else if (k == 13) {
                     answered = true;

@@ -13,7 +13,8 @@ struct Question {
     string desc;      // 설명 (아직 미구현 시 빈칸)
     string keyword;   // 키워드 (아직 미구현 시 빈칸)
     string commentary; // 문제 해설을 저장할 변수
-    vector<string> wrongChoices; // NEW
+    vector<string> wrongChoices;
+    int level;
 };
 
 // 퍽 데이터를 저장할 전역 벡터 (외부에서 접근 가능하게 extern 선언)
