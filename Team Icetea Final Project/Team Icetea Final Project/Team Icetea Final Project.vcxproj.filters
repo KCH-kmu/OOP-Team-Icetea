@@ -15,30 +15,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MainMenu.cpp">
+    <ClCompile Include="Sources\MainMenu.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="Sources\main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="QuestionData.cpp">
+    <ClCompile Include="Sources\QuestionData.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="QuestionFeatures.cpp">
+    <ClCompile Include="Sources\QuestionFeatures.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MainMenu.h">
+    <ClInclude Include="Headers\MainMenu.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="QuestionData.h">
+    <ClInclude Include="Headers\QuestionData.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="QuestionFeatures.h">
+    <ClInclude Include="Headers\QuestionFeatures.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.h">
+    <ClInclude Include="Headers\Utils.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
