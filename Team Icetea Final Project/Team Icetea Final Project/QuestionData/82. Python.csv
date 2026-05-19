@@ -1,4 +1,4 @@
-Q.DataID,Q.Desc,R.Answer,W.Answer1,W.Answer2,W.Answer3,Difficulty,Explanation
+Q.DataID,Q.Desc,R.Answer,W.Answer1,W.Answer2,W.Answer3,Difficulty,Explanation,Keyword
 1,다음 중 문법에 맞는 식별자가 아닌 것은?,2spams,spAms,spam,spam4U,2,"파이썬 식별자(변수명 등)는 숫자로 시작할 수 없습니다.
 반드시 영문자나 언더바(_)로 시작해야합니다."
 2,파이썬에서 사용자의 입력을 받기 위한 내장 함수는 무엇인가?,input,read,enter,malloc,2,"input() 함수는 사용자로부터 키보드 입력을 문자열 형태로 받는

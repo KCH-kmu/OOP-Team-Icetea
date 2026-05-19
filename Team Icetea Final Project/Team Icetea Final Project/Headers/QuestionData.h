@@ -5,23 +5,24 @@
 
 using namespace std;
 
-// ÆÜ ÇÏ³ª¿¡ ´ëÇÑ Á¤º¸ ±¸Á¶Ã¼
+// ï¿½ï¿½ ï¿½Ï³ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
 struct Question {
-    string nameKr;    // ÇÑ±Û ÀÌ¸§
-    string nameEn;    // ¿µ¹® ÀÌ¸§
-    string character; // Àü½Â Ä³¸¯ÅÍ (°ø¿ë Æ÷ÇÔ)
-    string desc;      // ¼³¸í (¾ÆÁ÷ ¹Ì±¸Çö ½Ã ºóÄ­)
-    string keyword;   // Å°¿öµå (¾ÆÁ÷ ¹Ì±¸Çö ½Ã ºóÄ­)
-    string commentary; // ¹®Á¦ ÇØ¼³À» ÀúÀåÇÒ º¯¼ö
+    string nameKr;    // ï¿½Ñ±ï¿½ ï¿½Ì¸ï¿½
+    string nameEn;    // ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½
+    string character; // ï¿½ï¿½ï¿½ï¿½ Ä³ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    string desc;      // ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½Ì±ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä­)
+    string keyword;   // Å°ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½Ì±ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä­)
+    string commentary; // ï¿½ï¿½ï¿½ï¿½ ï¿½Ø¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    string searchKeyword; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å°ï¿½ï¿½ï¿½ï¿½
     vector<string> wrongChoices;
     int level;
 };
 
-// ÆÜ µ¥ÀÌÅÍ¸¦ ÀúÀåÇÒ Àü¿ª º¤ÅÍ (¿ÜºÎ¿¡¼­ Á¢±Ù °¡´ÉÇÏ°Ô extern ¼±¾ð)
+// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ÜºÎ¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ extern ï¿½ï¿½ï¿½ï¿½)
 extern vector<Question> PracticeQuestions;
 extern vector<Question> ExamQuestions;
 
-// µ¥ÀÌÅÍ ·Îµù ÇÔ¼ö ¼±¾ð
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Îµï¿½ ï¿½Ô¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 void LoadAllQuestionData();
 
 void AddPracticeQuestion(const Question& newQuestion);

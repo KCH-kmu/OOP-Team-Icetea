@@ -132,13 +132,11 @@
     <ClCompile Include="Sources\main.cpp" />
     <ClCompile Include="Sources\QuestionData.cpp" />
     <ClCompile Include="Sources\QuestionFeatures.cpp" />
-    <ClCompile Include="Sources\QuestionSearch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Headers\MainMenu.h" />
     <ClInclude Include="Headers\QuestionData.h" />
     <ClInclude Include="Headers\QuestionFeatures.h" />
-    <ClInclude Include="Headers\QuestionSearch.h" />
     <ClInclude Include="Headers\Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

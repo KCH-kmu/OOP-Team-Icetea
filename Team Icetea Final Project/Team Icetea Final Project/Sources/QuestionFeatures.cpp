@@ -68,7 +68,8 @@ vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
 }
 
 // 폴더 내의 CSV 파일 목록을 탐색하여 과목 선택 메뉴 출력
-string SelectSubjectMenu() {
+// title 파라미터로 헤더 문구 변경 가능 (기본값: "학습할 과목을 선택하세요")
+string SelectSubjectMenu(string title = "학습할 과목을 선택하세요") {
     vector<pair<string, string>> subjects; // 과목코드.이름, 전체경로
 
     // 현재 디렉토리에서 .csv 확장자 파일만 수집
@@ -103,25 +104,64 @@ string SelectSubjectMenu() {
         return "";
     }
 
+    // 파일명 앞의 숫자를 기준으로 오름차순 정렬 (예: "1. Test1" → 1, "100. Test100" → 100)
+    sort(subjects.begin(), subjects.end(), [](const pair<string, string>& a, const pair<string, string>& b) {
+        int numA = 0, numB = 0;
+        try { numA = stoi(a.first); } catch (...) {}
+        try { numB = stoi(b.first); } catch (...) {}
+        return numA < numB;
+    });
+
     int focus = 0;
+    int itemsPerPage = 10;
+    int total = (int)subjects.size();
+
     while (true) {
+        // 현재 포커스 위치에 따라 페이지 자동 계산
+        int totalPages = (total + itemsPerPage - 1) / itemsPerPage;
+        int currentPage = focus / itemsPerPage; // 0-indexed
+        int startIdx = currentPage * itemsPerPage;
+        int endIdx = min(startIdx + itemsPerPage, total);
+
         screenClear();
-        cout << "=== 학습할 과목을 선택하세요 ===" << endl;
+        cout << "=== " << title << " ===" << endl;
         cout << "--------------------------------" << endl;
 
-        for (int i = 0; i < (int)subjects.size(); i++) {
+        for (int i = startIdx; i < endIdx; i++) {
             if (i == focus) cout << "> " << subjects[i].first << endl;
             else            cout << "  " << subjects[i].first << endl;
         }
 
         cout << "--------------------------------" << endl;
-        cout << "↑↓: 이동, Enter: 선택, ESC: 취소" << endl;
+        // 과목이 10개 초과일 때만 페이지 표시
+        if (totalPages > 1) {
+            cout << "        " << (currentPage + 1) << " / " << totalPages << " 페이지" << endl;
+            cout << "--------------------------------" << endl;
+            cout << "↑↓: 이동  ←→: 페이지  Enter: 선택  ESC: 취소" << endl;
+        }
+        else {
+            cout << "↑↓: 이동, Enter: 선택, ESC: 취소" << endl;
+        }
 
         int key = _getch();
         if (key == 224) {
             key = _getch();
-            if (key == KEY_UP) focus = (focus - 1 + (int)subjects.size()) % (int)subjects.size();
-            else if (key == KEY_DOWN) focus = (focus + 1) % (int)subjects.size();
+            if (key == KEY_UP) {
+                // 현재 페이지 첫 항목보다 위로는 이동 안 함
+                if (focus > startIdx) focus--;
+            }
+            else if (key == KEY_DOWN) {
+                // 현재 페이지 마지막 항목보다 아래로는 이동 안 함
+                if (focus < endIdx - 1) focus++;
+            }
+            else if (key == KEY_LEFT) {
+                if (currentPage > 0)
+                    focus = (currentPage - 1) * itemsPerPage;
+            }
+            else if (key == KEY_RIGHT) {
+                if (currentPage < totalPages - 1)
+                    focus = (currentPage + 1) * itemsPerPage;
+            }
         }
         else if (key == KEY_ENTER) {
             return subjects[focus].second; // 선택된 파일 경로 반환
@@ -154,6 +194,9 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
             q.nameEn = fields[3];    // 오답1
             q.character = fields[4]; // 오답2 (기존 변수 재활용)
             q.keyword = fields[5];   // 오답3 (기존 변수 재활용)
+            q.level = (fields.size() > 6) ? stoi(fields[6]) : 0;
+            q.commentary = (fields.size() > 7) ? fields[7] : "";
+            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // 검색용 키워드
             list.push_back(q);
         }
     }
@@ -351,7 +394,82 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
 
 void PracticeQuestionSearch()
 {
-    SearchLogic(PracticeQuestions, "연습문제");
+    // 과목 선택 화면 표시
+    string selectedFile = SelectSubjectMenu("검색할 과목을 선택하세요");
+    if (selectedFile.empty()) return;
+
+    // 선택된 CSV 파일에서 문제 로드
+    vector<Question> questions = LoadQuestionsFromCSV(selectedFile);
+    if (questions.empty()) {
+        screenClear();
+        cout << "문제 데이터가 없습니다." << endl;
+        cout << "아무 키나 눌러주세요..." << endl;
+        _getch();
+        return;
+    }
+
+    // 과목명 추출 (파일 경로에서 파일명만)
+    string subjectName = fs::path(selectedFile).stem().string();
+
+    int focus = 0;
+    int itemsPerPage = 10;
+    int total = (int)questions.size();
+
+    while (true) {
+        int totalPages = (total + itemsPerPage - 1) / itemsPerPage;
+        int currentPage = focus / itemsPerPage; // 0-indexed
+        int startIdx = currentPage * itemsPerPage;
+        int endIdx = min(startIdx + itemsPerPage, total);
+
+        screenClear();
+        cout << "=== " << subjectName << " 문제 목록 ===" << endl;
+        cout << "  번호  난이도  키워드" << endl;
+        cout << "--------------------------------" << endl;
+
+        for (int i = startIdx; i < endIdx; i++) {
+            string kw = questions[i].searchKeyword.empty() ? "-" : questions[i].searchKeyword;
+            string line = to_string(i + 1) + ".  Lv." + to_string(questions[i].level) + "  " + kw;
+            if (i == focus) cout << "> " << line << endl;
+            else            cout << "  " << line << endl;
+        }
+
+        cout << "--------------------------------" << endl;
+        if (totalPages > 1) {
+            cout << "        " << (currentPage + 1) << " / " << totalPages << " 페이지" << endl;
+            cout << "--------------------------------" << endl;
+            cout << "↑↓: 이동  ←→: 페이지  Enter: 선택  ESC: 뒤로" << endl;
+        }
+        else {
+            cout << "↑↓: 이동  Enter: 선택  ESC: 뒤로" << endl;
+        }
+
+        int key = _getch();
+        if (key == 224) {
+            key = _getch();
+            if (key == KEY_UP) {
+                if (focus > startIdx) focus--;
+            }
+            else if (key == KEY_DOWN) {
+                if (focus < endIdx - 1) focus++;
+            }
+            else if (key == KEY_LEFT) {
+                if (currentPage > 0) focus = (currentPage - 1) * itemsPerPage;
+            }
+            else if (key == KEY_RIGHT) {
+                if (currentPage < totalPages - 1) focus = (currentPage + 1) * itemsPerPage;
+            }
+        }
+        else if (key == KEY_ENTER) {
+            // 추후 수정 예정 - 문제 상세 보기
+            screenClear();
+            cout << "추후 수정 예정입니다." << endl;
+            cout << "아무 키나 눌러주세요..." << endl;
+            _getch();
+        }
+        else if (key == KEY_ESC) {
+            return;
+        }
+    }
 }
 
 void ExamQuestionSearch()
@@ -359,37 +477,12 @@ void ExamQuestionSearch()
     SearchLogic(ExamQuestions, "시험모드");
 }
 
-// [유지됨] 입력 코드 줄바꿈 적용
+// 추후 수정 예정
 void PracticeQuestionMake()
 {
     screenClear();
-    cout << "=== 연습문제 문제 제작 ===" << endl;
-    Question newQuestion;
-
-    cout << "문제 이름(한글) 입력: ";
-    getline(cin, newQuestion.nameKr);
-
-    cout << "문제 이름(영문) 입력: ";
-    getline(cin, newQuestion.nameEn);
-
-    cout << "전승 캐릭터 입력: ";
-    getline(cin, newQuestion.character);
-
-    cout << "문제 설명 입력: ";
-    getline(cin, newQuestion.desc);
-
-    cout << "키워드 입력: ";
-    getline(cin, newQuestion.keyword);
-
-    cout << "\n저장하시겠습니까? (y/n): ";
-    char confirm = _getch();
-    if (confirm == 'y' || confirm == 'Y') {
-        AddPracticeQuestion(newQuestion);
-        cout << "\n성공적으로 추가되었습니다! 아무 키나 누르면 돌아갑니다." << endl;
-    }
-    else {
-        cout << "\n취소되었습니다." << endl;
-    }
+    cout << "추후 수정 예정입니다." << endl;
+    cout << "아무 키나 눌러주세요..." << endl;
     _getch();
 }
 
@@ -497,6 +590,7 @@ void PracticeQuestionSolve()
                 // 해설이 없으면 기본 문구 출력
                 q.commentary = "[ 등록된 해설이 없습니다. ]";
             }
+            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // 검색용 키워드
             quizList.push_back(q);
         }
     }
@@ -642,7 +736,8 @@ void ExamQuestionSolve()
                 // 해설이 없으면 기본 문구 출력
                 q.commentary = "[ 등록된 해설이 없습니다. ]";
             }
-            
+            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // 검색용 키워드
+
             ExamQuestions.push_back(q);
         }
     }
