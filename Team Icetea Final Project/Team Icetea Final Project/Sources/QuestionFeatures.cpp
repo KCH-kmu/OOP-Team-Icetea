@@ -919,6 +919,54 @@ FinalScore:
     }
 }
 
+void PrintBoss()
+{
+    cout << endl;
+
+    cout << "            /\\_____/\\\\ " << endl;
+    cout << "           /  o   o  \\\\" << endl;
+    cout << "          ( ==  ^  == )" << endl;
+    cout << "           )         ( " << endl;
+    cout << "          (           )" << endl;
+    cout << "         ( (  )   (  ) )" << endl;
+    cout << "        (__(__)___(__)__)" << endl;
+
+    cout << endl;
+    cout << "         [ BOSS MONSTER ]" << endl;
+    cout << endl;
+}
+
+void PrintBossDamaged()
+{
+    cout << endl;
+
+    cout << "            /\\_____/\\\\ " << endl;
+    cout << "           /  x   x  \\\\" << endl;
+    cout << "          ( ==  ^  == )" << endl;
+    cout << "           )   ---   ( " << endl;
+    cout << "          (    !!!    )" << endl;
+    cout << "         ( (  )   (  ) )" << endl;
+    cout << "        (__(__)___(__)__)" << endl;
+
+    cout << endl;
+    cout << "       [ BOSS HIT !!! ]" << endl;
+    cout << endl;
+}
+
+void PrintAttackEffect(int damage)
+{
+    cout << endl;
+
+    cout << "       플레이어의 공격!" << endl;
+    cout << "==================================" << endl;
+    cout << "            >>> BOOM! >>>         " << endl;
+    cout << "==================================" << endl;
+
+    cout << endl;
+    cout << "보스에게 " << damage << " 데미지!" << endl;
+    cout << endl;
+}
+
 void BossMonsterMode()
 {
     string selectedFile = SelectSubjectMenu("보스전에 사용할 과목을 선택하세요");
@@ -972,6 +1020,8 @@ void BossMonsterMode()
         for (int j = hpBar; j < 20; j++) cout << "-";
 
         cout << "] " << bossHp << " / " << maxBossHp << endl;
+        
+        PrintBoss();
 
         cout << "--------------------------------------" << endl;
         cout << "문제 [" << i + 1 << " / " << quizList.size() << "]" << endl;
@@ -999,10 +1049,23 @@ void BossMonsterMode()
             score += combo * 2;
 
             cout << endl;
-            cout << "[정답] 보스에게 " << damage << " 데미지!" << endl;
+            
+            screenClear();
+
+            cout << "========== 몬스터 처치 모드 ==========" << endl;
+            cout << "[정답!] 공격 성공!" << endl;
+            cout << "보스에게 " << damage << " 데미지!" << endl;
 
             if (combo >= 3)
+            {
                 cout << "콤보 보너스 발동!" << endl;
+            }
+
+            PrintBossDamaged();
+
+            cout << endl;
+            cout << "아무 키나 누르면 다음 문제로 이동합니다..." << endl;
+            _getch();
         }
         else
         {
@@ -1014,8 +1077,6 @@ void BossMonsterMode()
         }
 
         cout << endl;
-        cout << "아무 키나 누르면 다음 문제로 이동합니다..." << endl;
-        _getch();
     }
 
     screenClear();
