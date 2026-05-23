@@ -918,3 +918,119 @@ FinalScore:
         if (finalKey == 27) break;
     }
 }
+
+void BossMonsterMode()
+{
+    string selectedFile = SelectSubjectMenu("보스전에 사용할 과목을 선택하세요");
+    if (selectedFile == "") return;
+
+    vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
+
+    if (quizList.empty())
+    {
+        screenClear();
+        cout << "문제 데이터가 없습니다." << endl;
+        cout << "아무 키나 눌러주세요..." << endl;
+        _getch();
+        return;
+    }
+
+    random_device rd;
+    mt19937 g(rd());
+    shuffle(quizList.begin(), quizList.end(), g);
+
+    int bossHp = 100;
+    int maxBossHp = 100;
+    int score = 0;
+    int combo = 0;
+    int timeLimit = 120;
+
+    time_t startTime = time(nullptr);
+
+    for (int i = 0; i < (int)quizList.size(); i++)
+    {
+        if (bossHp <= 0) break;
+
+        int elapsed = (int)(time(nullptr) - startTime);
+        int remainTime = timeLimit - elapsed;
+
+        if (remainTime <= 0) break;
+
+        string userAnswer;
+
+        screenClear();
+
+        cout << "========== 몬스터 처치 모드 ==========" << endl;
+        cout << "남은 시간: " << remainTime << "초" << endl;
+        cout << "점수: " << score << endl;
+        cout << "콤보: " << combo << endl;
+
+        cout << "Boss HP: [";
+        int hpBar = bossHp / 5;
+
+        for (int j = 0; j < hpBar; j++) cout << "#";
+        for (int j = hpBar; j < 20; j++) cout << "-";
+
+        cout << "] " << bossHp << " / " << maxBossHp << endl;
+
+        cout << "--------------------------------------" << endl;
+        cout << "문제 [" << i + 1 << " / " << quizList.size() << "]" << endl;
+        cout << quizList[i].desc << endl;
+        cout << "--------------------------------------" << endl;
+
+        cout << "정답 입력: ";
+        getline(cin, userAnswer);
+
+        if (userAnswer == quizList[i].nameKr)
+        {
+            combo++;
+
+            int damage = 1;
+
+            if (combo >= 5)
+                damage = 5;
+            else if (combo >= 3)
+                damage = 3;
+
+            bossHp -= damage;
+            if (bossHp < 0) bossHp = 0;
+
+            score += damage * 10;
+            score += combo * 2;
+
+            cout << endl;
+            cout << "[정답] 보스에게 " << damage << " 데미지!" << endl;
+
+            if (combo >= 3)
+                cout << "콤보 보너스 발동!" << endl;
+        }
+        else
+        {
+            combo = 0;
+
+            cout << endl;
+            cout << "[오답] 공격 실패!" << endl;
+            cout << "정답: " << quizList[i].nameKr << endl;
+        }
+
+        cout << endl;
+        cout << "아무 키나 누르면 다음 문제로 이동합니다..." << endl;
+        _getch();
+    }
+
+    screenClear();
+
+    cout << "========== 게임 결과 ==========" << endl;
+
+    if (bossHp <= 0)
+        cout << "보스 처치 성공!" << endl;
+    else
+        cout << "보스 처치 실패!" << endl;
+
+    cout << "최종 점수: " << score << endl;
+    cout << "남은 보스 HP: " << bossHp << " / " << maxBossHp << endl;
+    cout << "===============================" << endl;
+    cout << "아무 키나 누르면 메뉴로 돌아갑니다..." << endl;
+
+    _getch();
+}

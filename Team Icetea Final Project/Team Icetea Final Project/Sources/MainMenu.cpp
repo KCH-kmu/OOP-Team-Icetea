@@ -144,9 +144,17 @@ void ShowGameModeMenu(int logoWidth)
         else if (getkey == KEY_ENTER)
         {
             screenClear();
-            cout << "추후 제작 예정입니다" << endl;
-            cout << "계속하려면 아무 키나 누르세요..." << endl;
-            _getch();
+
+            if (focus == 1)
+            {
+                BossMonsterMode();
+            }
+            else if (focus == 2)
+            {
+                cout << "무한모드는 추후 제작 예정입니다." << endl;
+                cout << "계속하려면 아무 키나 누르세요..." << endl;
+                _getch();
+            }
         }
         else if (getkey == KEY_ESC)
         {
