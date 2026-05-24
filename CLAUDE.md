@@ -1,0 +1,1 @@
+Visual Studio, exe 커맨드 창에서는 한글이 보이게 인코딩할 것.

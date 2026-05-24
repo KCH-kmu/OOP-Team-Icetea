@@ -11,6 +11,7 @@
 #include <random>
 #include <fstream>
 #include <sstream>
+#include <set>
 #include <conio.h>
 #include <thread> // 타이밍 루프를 위해 추가
 #include <chrono>
@@ -18,6 +19,23 @@
 
 using namespace std;
 namespace fs = std::filesystem;
+
+// ===== CSV 이스케이프 헬퍼 (RFC 4180) =====
+// 콤마, 큰따옴표, 줄바꿈이 포함된 필드를 "..."로 감싸는 함수
+static string EscapeCSVField(const string& s) {
+    bool needsQuote = (s.find(',')  != string::npos ||
+                       s.find('"') != string::npos ||
+                       s.find('\n') != string::npos ||
+                       s.find('\r') != string::npos);
+    if (!needsQuote) return s;
+    string result = "\"";
+    for (char c : s) {
+        if (c == '"') result += "\"\"";
+        else result += c;
+    }
+    result += "\"";
+    return result;
+}
 
 // ===== 정렬/검색 보조 함수들 =====
 // 영문 대문자만 소문자로 변환 (한글 2바이트 시퀀스는 건드리지 않음)
@@ -145,7 +163,98 @@ vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
 
 // 폴더 내의 CSV 파일 목록을 탐색하여 과목 선택 메뉴 출력
 // title 파라미터로 헤더 문구 변경 가능 (기본값: "학습할 과목을 선택하세요")
-string SelectSubjectMenu(string title = "학습할 과목을 선택하세요") {
+// ===== 새 과목 등록 화면 =====
+// 사용 중인 번호를 스캔해 두 가지 추천 번호를 보여준 뒤 사용자가 직접 입력.
+// 성공 시 새 CSV 파일 경로 반환, 취소 시 빈 문자열 반환.
+static string PromptNewSubject() {
+    string folderPath = "./QuestionData";
+
+    // 사용 중인 과목 번호 수집
+    set<int> usedNumbers;
+    if (fs::exists(folderPath)) {
+        for (const auto& entry : fs::directory_iterator(folderPath)) {
+            if (entry.path().extension() == ".csv") {
+                try { usedNumbers.insert(stoi(entry.path().stem().string())); } catch (...) {}
+            }
+        }
+    }
+
+    // 추천 번호 계산
+    int suggestSmall = 1;
+    while (usedNumbers.count(suggestSmall)) suggestSmall++;
+    int suggestNext = usedNumbers.empty() ? 1 : (*usedNumbers.rbegin() + 1);
+
+    while (true) {
+        screenClear();
+        cout << "=== 새 과목 등록 ===" << endl;
+        cout << "----------------------------------------" << endl;
+        cout << "[추천 번호]" << endl;
+        cout << "  - 가장 작은 빈 번호 : " << suggestSmall << endl;
+        cout << "  - 마지막 번호 다음  : " << suggestNext  << endl;
+        cout << "----------------------------------------" << endl;
+        cout << "새 과목 번호 입력 (ESC=취소): ";
+
+        // 숫자 직접 입력 (ESC/백스페이스 지원)
+        string numStr;
+        while (true) {
+            int ch = _getch();
+            if (ch == KEY_ESC) return "";
+            if (ch == KEY_ENTER) break;
+            if (ch == 8 && !numStr.empty()) {  // 백스페이스
+                numStr.pop_back();
+                cout << "\b \b";
+            }
+            else if (ch >= '0' && ch <= '9') {
+                numStr += (char)ch;
+                cout << (char)ch;
+            }
+        }
+        cout << endl;
+
+        if (numStr.empty()) continue;
+        int newNum = 0;
+        try { newNum = stoi(numStr); } catch (...) { continue; }
+        if (newNum <= 0) continue;
+
+        if (usedNumbers.count(newNum)) {
+            cout << "[오류] " << newNum << "번은 이미 사용 중입니다. 다시 입력하세요." << endl;
+            _getch();
+            continue;
+        }
+
+        cout << "새 과목 이름 입력: ";
+        string newName;
+        getline(cin, newName);
+        if (newName.empty()) continue;
+
+        string newPath = folderPath + "/" + to_string(newNum) + ". " + newName + ".csv";
+
+        screenClear();
+        cout << "=== 새 과목 등록 ===" << endl;
+        cout << "----------------------------------------" << endl;
+        cout << "다음 파일을 생성합니다:" << endl;
+        cout << "  " << newNum << ". " << newName << ".csv" << endl;
+        cout << "----------------------------------------" << endl;
+        cout << "생성하시겠습니까? (y/n): ";
+        int confirm = _getch();
+        cout << endl;
+
+        if (confirm == 'y' || confirm == 'Y') {
+            ofstream newFile(newPath);
+            if (!newFile.is_open()) {
+                cout << "[오류] 파일 생성 실패: " << newPath << endl;
+                _getch();
+                return "";
+            }
+            newFile << "Q.DataID,Q.Desc,R.Answer,W.Answer1,W.Answer2,W.Answer3,Difficulty,Explanation,Keyword" << endl;
+            newFile.close();
+            return newPath;
+        }
+        // n이면 다시 처음으로
+    }
+}
+
+string SelectSubjectMenu(string title = "학습할 과목을 선택하세요", bool allowCreate = false) {
     vector<pair<string, string>> subjects; // 과목코드.이름, 전체경로
 
     // 현재 디렉토리에서 .csv 확장자 파일만 수집
@@ -213,10 +322,16 @@ string SelectSubjectMenu(string title = "학습할 과목을 선택하세요") {
         if (totalPages > 1) {
             cout << "        " << (currentPage + 1) << " / " << totalPages << " 페이지" << endl;
             cout << "--------------------------------" << endl;
-            cout << "↑↓: 이동  ←→: 페이지  Enter: 선택  ESC: 취소" << endl;
+        }
+        // allowCreate 여부에 따라 안내 문구 다르게 표시
+        if (allowCreate) {
+            cout << "↑↓:이동  ←→:페이지  Enter:선택  F:새 과목 등록  ESC:취소" << endl;
+        }
+        else if (totalPages > 1) {
+            cout << "↑↓:이동  ←→:페이지  Enter:선택  ESC:취소" << endl;
         }
         else {
-            cout << "↑↓: 이동, Enter: 선택, ESC: 취소" << endl;
+            cout << "↑↓:이동  Enter:선택  ESC:취소" << endl;
         }
 
         int key = _getch();
@@ -241,6 +356,29 @@ string SelectSubjectMenu(string title = "학습할 과목을 선택하세요") {
         }
         else if (key == KEY_ENTER) {
             return subjects[focus].second; // 선택된 파일 경로 반환
+        }
+        else if ((key == 'f' || key == 'F') && allowCreate) {
+            // 새 과목 등록 화면 진입
+            string newPath = PromptNewSubject();
+            if (!newPath.empty()) return newPath;
+            // 취소 시 목록 재스캔 후 복귀
+            subjects.clear();
+            if (fs::exists(folderPath)) {
+                for (const auto& entry : fs::directory_iterator(folderPath)) {
+                    if (entry.path().extension() == ".csv") {
+                        subjects.push_back({ entry.path().stem().string(), entry.path().string() });
+                    }
+                }
+                sort(subjects.begin(), subjects.end(),
+                    [](const pair<string,string>& a, const pair<string,string>& b) {
+                        int na=0, nb=0;
+                        try { na=stoi(a.first); } catch(...) {}
+                        try { nb=stoi(b.first); } catch(...) {}
+                        return na < nb;
+                    });
+            }
+            total = (int)subjects.size();
+            focus = 0;
         }
         else if (key == KEY_ESC) {
             return "";
@@ -559,7 +697,7 @@ void PracticeQuestionSearch()
         cout << endl;
 
         cout << "----------------------------------------" << endl;
-        cout << "↑↓:이동  ←→:페이지  Tab:정렬변경  F:키워드검색  Enter:선택  ESC:뒤로" << endl;
+        cout << "↑↓:이동  ←→:페이지  Tab:정렬 변경  F:키워드 검색  Enter:선택  ESC:뒤로" << endl;
 
         int key = _getch();
         if (key == 224) {
@@ -618,6 +756,174 @@ void PracticeQuestionMake()
     cout << "추후 수정 예정입니다." << endl;
     cout << "아무 키나 눌러주세요..." << endl;
     _getch();
+}
+
+// ===== 통합 문제 제작 함수 =====
+// 연습/시험 공용 CSV에 새 문제를 추가한다.
+// 난이도 1=OX, 2·3=4지선다. 연습·시험 모드는 풀이 화면에서 해설 표시 여부만 다름.
+void MakeQuestion()
+{
+    // 1. 과목 선택 (F 키로 새 과목 등록 가능)
+    string selectedFile = SelectSubjectMenu("문제를 추가할 과목을 선택하세요", true);
+    if (selectedFile.empty()) return;
+
+    string subjectName = fs::path(selectedFile).stem().string();
+
+    // 2. 기존 CSV에서 최대 문제 번호 파악 → nextID = 최대값 + 1
+    int nextID = 1;
+    {
+        ifstream f(selectedFile);
+        string line;
+        getline(f, line); // 헤더 스킵
+        while (getline(f, line)) {
+            if (line.empty()) continue;
+            vector<string> fields = ParseCSVLine(line, f);
+            if (!fields.empty()) {
+                try { int id = stoi(fields[0]); if (id >= nextID) nextID = id + 1; }
+                catch (...) {}
+            }
+        }
+    }
+
+    while (true) {
+        // 3. 난이도 선택
+        int difficulty = 0;
+        {
+            screenClear();
+            cout << "=== 새 문제 입력 ===" << endl;
+            cout << "과목      : " << subjectName << ".csv" << endl;
+            cout << "문제 번호 : " << nextID << endl;
+            cout << "----------------------------------------" << endl;
+            string diffInput;
+            cout << "난이도 선택 (1=OX  2=보통  3=어려움  Enter=취소): ";
+            while (true) {
+                getline(cin, diffInput);
+                if (diffInput.empty())    return;
+                if (diffInput == "1") { difficulty = 1; break; }
+                if (diffInput == "2") { difficulty = 2; break; }
+                if (diffInput == "3") { difficulty = 3; break; }
+                cout << "  1, 2, 3 중 하나를 입력하세요: ";
+            }
+        }
+
+        // 4. 내용 입력
+        string desc, rAnswer, wAnswer1, wAnswer2, wAnswer3, keyword, explanation;
+
+        screenClear();
+        cout << "=== 새 문제 입력 ===" << endl;
+        cout << "저장: " << subjectName << ".csv  (DataID: " << nextID << ")" << endl;
+        cout << "난이도: Lv." << difficulty;
+        if      (difficulty == 1) cout << " (OX)";
+        else if (difficulty == 2) cout << " (4지선다 보통)";
+        else                      cout << " (4지선다 어려움)";
+        cout << endl;
+        cout << "----------------------------------------" << endl;
+
+        cout << "1) 문제 설명: ";
+        getline(cin, desc);
+        if (desc.empty()) {
+            cout << "[취소] 설명이 비어 있습니다. Enter 키를 누르세요." << endl;
+            { string dummy; getline(cin, dummy); } continue;
+        }
+
+        if (difficulty == 1) {
+            // OX 입력 (Enter로 확정)
+            string oxInput;
+            cout << "2) 정답 (O 또는 X, Enter로 확정): ";
+            while (true) {
+                getline(cin, oxInput);
+                if (oxInput.empty()) { rAnswer = ""; break; }  // 빈 입력 → 취소
+                if (oxInput == "O" || oxInput == "o") { rAnswer = "O"; wAnswer1 = "X"; break; }
+                if (oxInput == "X" || oxInput == "x") { rAnswer = "X"; wAnswer1 = "O"; break; }
+                cout << "  O 또는 X만 입력하세요 (Enter로 확정): ";
+            }
+            if (rAnswer.empty()) continue;
+            wAnswer2 = "";
+            wAnswer3 = "";
+        }
+        else {
+            // 4지선다 입력
+            cout << "2) 정답  : "; getline(cin, rAnswer);
+            if (rAnswer.empty()) { cout << "[취소] Enter 키를 누르세요." << endl; { string dummy; getline(cin, dummy); } continue; }
+            cout << "3) 오답1 : "; getline(cin, wAnswer1);
+            cout << "4) 오답2 : "; getline(cin, wAnswer2);
+            cout << "5) 오답3 : "; getline(cin, wAnswer3);
+        }
+
+        int kwNum = (difficulty == 1) ? 3 : 6;
+        cout << kwNum << ") 검색 키워드 (Enter=건너뜀): "; getline(cin, keyword);
+        cout << kwNum + 1 << ") 해설        (Enter=건너뜀): "; getline(cin, explanation);
+
+        // 5. 확인 화면
+        screenClear();
+        cout << "------------ 입력 확인 ------------" << endl;
+        cout << "과목     : " << subjectName << ".csv  (DataID: " << nextID << ")" << endl;
+        cout << "난이도   : Lv." << difficulty;
+        if      (difficulty == 1) cout << " (OX)";
+        else if (difficulty == 2) cout << " (보통)";
+        else                      cout << " (어려움)";
+        cout << endl;
+        cout << "문제     : " << desc     << endl;
+        cout << "정답     : " << rAnswer  << endl;
+        if (difficulty == 1) {
+            cout << "오답     : " << wAnswer1 << endl;
+        } else {
+            cout << "오답 1   : " << wAnswer1 << endl;
+            cout << "오답 2   : " << wAnswer2 << endl;
+            cout << "오답 3   : " << wAnswer3 << endl;
+        }
+        cout << "키워드   : " << (keyword.empty()     ? "-" : keyword)     << endl;
+        cout << "해설     : " << (explanation.empty() ? "-" : explanation) << endl;
+        cout << "-----------------------------------" << endl;
+        string confirmInput;
+        cout << "저장하시겠습니까? (y=저장  n=재입력): ";
+        getline(cin, confirmInput);
+
+        if (confirmInput.empty())                              return;
+        if (confirmInput != "y" && confirmInput != "Y") continue; // n → 재입력
+
+        // 6. CSV 파일 끝에 한 줄 추가
+        {
+            // 마지막 줄에 줄바꿈이 없으면 먼저 추가
+            {
+                fstream chk(selectedFile, ios::in | ios::out | ios::binary);
+                if (chk.is_open()) {
+                    chk.seekg(-1, ios::end);
+                    char last; chk.get(last);
+                    chk.close();
+                    if (last != '\n') {
+                        ofstream nl(selectedFile, ios::app | ios::binary);
+                        nl << "\r\n";
+                    }
+                }
+            }
+            ofstream out(selectedFile, ios::app);
+            if (!out.is_open()) {
+                cout << "[오류] 파일 저장 실패! Enter 키를 누르세요." << endl;
+                { string dummy; getline(cin, dummy); } continue;
+            }
+            out << EscapeCSVField(to_string(nextID)) << ","
+                << EscapeCSVField(desc)        << ","
+                << EscapeCSVField(rAnswer)     << ","
+                << EscapeCSVField(wAnswer1)    << ","
+                << EscapeCSVField(wAnswer2)    << ","
+                << EscapeCSVField(wAnswer3)    << ","
+                << difficulty                  << ","
+                << EscapeCSVField(explanation) << ","
+                << EscapeCSVField(keyword)     << "\r\n";
+            out.close();
+        }
+        nextID++;
+
+        // 7. 저장 완료 → 계속 입력 or 메뉴로
+        screenClear();
+        cout << "=== 저장 완료 ===" << endl;
+        cout << "문제 번호 " << (nextID - 1) << " 문제를 " << subjectName << ".csv 에 저장했습니다." << endl;
+        string contInput;
+        cout << "계속 입력하시겠습니까? (y=계속  n/Enter=메뉴로): ";
+        getline(cin, contInput);
+        if (contInput != "y" && contInput != "Y") return;
+    }
 }
 
 // [유지됨] 입력 코드 줄바꿈 적용

@@ -243,7 +243,7 @@ void ShowMainMenu()
                 PracticeQuestionSearch();
                 break;
             case 5:
-                PracticeQuestionMake();
+                MakeQuestion(); // 통합 문제 제작 함수
                 break;
             }
         }
