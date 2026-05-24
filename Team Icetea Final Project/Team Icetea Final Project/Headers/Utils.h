@@ -1,16 +1,18 @@
-#pragma once // Çì´õ ÆÄÀÏ Áßº¹ Æ÷ÇÔ ¹æÁö
+#pragma once // ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ßºï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 #include <iostream>
 #include <conio.h>
 
-// Å°º¸µå °ª »ó¼ö Á¤ÀÇ
+// Å°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 #define KEY_UP 72
 #define KEY_DOWN 80
-#define KEY_LEFT 75   // ÁÂÃø È­»ìÇ¥ Ãß°¡
-#define KEY_RIGHT 77  // ¿ìÃø È­»ìÇ¥ Ãß°¡
+#define KEY_LEFT 75   // ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½Ç¥ ï¿½ß°ï¿½
+#define KEY_RIGHT 77  // ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½Ç¥ ï¿½ß°ï¿½
 #define KEY_ENTER 13
 #define KEY_ESC 27
+#define KEY_TAB 9         // íƒ­ í‚¤ (ì •ë ¬ ëª¨ë“œ ìˆœí™˜ ì´ë™)
+#define KEY_BACKSPACE 8   // ë°±ìŠ¤í˜ì´ìŠ¤ (ê²€ìƒ‰ ì…ë ¥ ì‹œ ê¸€ì ì‚­ì œ)
 
-// È­¸é Áö¿ì±â ÇÔ¼ö
+// È­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
 inline void screenClear()
 {
     std::cout << "\033[2J\033[H";

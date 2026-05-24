@@ -14,9 +14,82 @@
 #include <conio.h>
 #include <thread> // 타이밍 루프를 위해 추가
 #include <chrono>
+#include <iomanip> // setw 등 출력 정렬을 위해 추가
 
 using namespace std;
 namespace fs = std::filesystem;
+
+// ===== 정렬/검색 보조 함수들 =====
+// 영문 대문자만 소문자로 변환 (한글 2바이트 시퀀스는 건드리지 않음)
+static string ToLowerCopy(const string& s) {
+    string r = s;
+    for (size_t i = 0; i < r.size(); i++) {
+        unsigned char c = (unsigned char)r[i];
+        if (c < 0x80) {
+            r[i] = (char)tolower(c);
+        }
+    }
+    return r;
+}
+
+// 대소문자 무시 부분일치 검사
+static bool ContainsCI(const string& haystack, const string& needleLower) {
+    if (needleLower.empty()) return true;
+    string lowHay = ToLowerCopy(haystack);
+    return lowHay.find(needleLower) != string::npos;
+}
+
+// 정렬 모드 enum 대용 상수
+// 0: 번호 오름차순, 1: 번호 내림차순, 2: 레벨 오름차순, 3: 레벨 내림차순
+// 정렬+검색 결과로 화면에 표시할 원본 인덱스 목록을 생성
+static vector<int> BuildDisplayIndex(const vector<Question>& src, int sortMode, const string& searchLower) {
+    vector<int> idx;
+    idx.reserve(src.size());
+    for (int i = 0; i < (int)src.size(); i++) {
+        // 검색어가 없으면 모두 통과, 있으면 searchKeyword 필드에서 부분일치 확인
+        if (searchLower.empty() || ContainsCI(src[i].searchKeyword, searchLower)) {
+            idx.push_back(i);
+        }
+    }
+    switch (sortMode) {
+    case 0: // 번호 오름차순 (원본 인덱스 순)
+        sort(idx.begin(), idx.end());
+        break;
+    case 1: // 번호 내림차순
+        sort(idx.begin(), idx.end(), greater<int>());
+        break;
+    case 2: // 레벨 오름차순 (같은 레벨은 원본 번호 순 유지)
+        stable_sort(idx.begin(), idx.end(), [&](int a, int b) {
+            return src[a].level < src[b].level;
+            });
+        break;
+    case 3: // 레벨 내림차순
+        stable_sort(idx.begin(), idx.end(), [&](int a, int b) {
+            return src[a].level > src[b].level;
+            });
+        break;
+    }
+    return idx;
+}
+
+// 키워드 검색 입력 화면 - 사용자가 입력한 검색어로 currentKeyword를 갱신
+// 빈 문자열로 Enter 시 검색 해제
+static void PromptSearchKeyword(string& currentKeyword) {
+    screenClear();
+    cout << "=== 키워드 검색 ===" << endl;
+    cout << "----------------------------------------" << endl;
+    cout << "검색어를 입력하세요." << endl;
+    cout << "(빈 채로 Enter 시 검색이 해제됩니다)" << endl;
+    cout << "----------------------------------------" << endl;
+    if (!currentKeyword.empty()) {
+        cout << "현재 적용된 검색어: \"" << currentKeyword << "\"" << endl;
+    }
+    cout << "검색어: ";
+
+    string input;
+    getline(cin, input);
+    currentKeyword = input;
+}
 
 // CSV의 한 줄을 파싱하는 함수 (사용자 정의 규칙 적용)
 vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
@@ -414,46 +487,89 @@ void PracticeQuestionSearch()
     // 과목명 추출 (파일 경로에서 파일명만)
     string subjectName = fs::path(selectedFile).stem().string();
 
-    int focus = 0;
+    // ===== 정렬/검색 상태 변수 =====
+    int sortMode = 0;          // 0:번호↑, 1:번호↓, 2:레벨↑, 3:레벨↓
+    string searchKeyword = ""; // 빈 문자열이면 검색 적용 안 함
+    int focus = 0;             // 현재 커서가 가리키는 표시 인덱스 (displayIdx 기준)
     int itemsPerPage = 10;
-    int total = (int)questions.size();
+
+    // 정렬 모드 라벨 (탭 표시에 사용)
+    const string sortLabels[4] = { "번호↑", "번호↓", "난이도↑", "난이도↓" };
 
     while (true) {
-        int totalPages = (total + itemsPerPage - 1) / itemsPerPage;
-        int currentPage = focus / itemsPerPage; // 0-indexed
+        // 매 프레임 정렬/검색 결과 재계산
+        vector<int> displayIdx = BuildDisplayIndex(questions, sortMode, ToLowerCopy(searchKeyword));
+        int total = (int)displayIdx.size();
+
+        // focus 범위 보정 (검색 후 결과가 줄어든 경우 등)
+        if (focus >= total) focus = max(0, total - 1);
+        if (focus < 0) focus = 0;
+
+        int totalPages = max(1, (total + itemsPerPage - 1) / itemsPerPage);
+        int currentPage = (total == 0) ? 0 : focus / itemsPerPage;
         int startIdx = currentPage * itemsPerPage;
         int endIdx = min(startIdx + itemsPerPage, total);
 
         screenClear();
         cout << "=== " << subjectName << " 문제 목록 ===" << endl;
-        cout << "  번호  난이도  키워드" << endl;
-        cout << "--------------------------------" << endl;
 
-        for (int i = startIdx; i < endIdx; i++) {
-            string kw = questions[i].searchKeyword.empty() ? "-" : questions[i].searchKeyword;
-            string line = to_string(i + 1) + ".  Lv." + to_string(questions[i].level) + "  " + kw;
-            if (i == focus) cout << "> " << line << endl;
-            else            cout << "  " << line << endl;
-        }
+        // 헤더: "번호"(4컬럼) + 4공백 + "난이도"(6컬럼) + 4공백 + "키워드"(6컬럼)
+        // 데이터 컬럼과 위치를 맞추기 위해 한글 폭(2컬럼)을 고려해 배치
+        cout << "  번호    난이도    키워드" << endl;
+        cout << "----------------------------------------" << endl;
 
-        cout << "--------------------------------" << endl;
-        if (totalPages > 1) {
-            cout << "        " << (currentPage + 1) << " / " << totalPages << " 페이지" << endl;
-            cout << "--------------------------------" << endl;
-            cout << "↑↓: 이동  ←→: 페이지  Enter: 선택  ESC: 뒤로" << endl;
+        if (total == 0) {
+            // 검색 결과가 0개일 때 안내 (목록 영역 채워주기)
+            cout << "  (검색 결과가 없습니다)" << endl;
+            for (int blank = 1; blank < itemsPerPage; blank++) cout << endl;
         }
         else {
-            cout << "↑↓: 이동  Enter: 선택  ESC: 뒤로" << endl;
+            for (int i = startIdx; i < endIdx; i++) {
+                int origIdx = displayIdx[i];           // 원본 문제 인덱스
+                const Question& q = questions[origIdx];
+                string kw = q.searchKeyword.empty() ? "-" : q.searchKeyword;
+                char focusChar = (i == focus) ? '>' : ' ';
+                // 번호는 원본 문제 번호(원본 인덱스 + 1)를 표시
+                // → 정렬 방향에 따라 번호 자체가 자연스럽게 1→N 또는 N→1로 나옴
+                // setw(2)로 '.' 위치를 동일 컬럼에 맞춤 (예: " 1.", "10.")
+                cout << focusChar << ' '
+                    << setw(2) << (origIdx + 1) << ".     "
+                    << "Lv." << q.level << "      "
+                    << kw << endl;
+            }
+            // 마지막 페이지가 itemsPerPage보다 적으면 빈 줄로 채워 레이아웃 유지
+            for (int blank = endIdx - startIdx; blank < itemsPerPage; blank++) cout << endl;
         }
+
+        cout << "----------------------------------------" << endl;
+        cout << "        " << (currentPage + 1) << " / " << totalPages << " 페이지" << endl;
+        cout << "----------------------------------------" << endl;
+
+        // ===== 정렬 탭(토글바) 출력 - 페이지 표시 아래로 이동 =====
+        // 활성 탭은 [ ]로, 비활성 탭은 공백 2칸으로 감싸 동일 폭 유지
+        for (int t = 0; t < 4; t++) {
+            if (sortMode == t) cout << "[" << sortLabels[t] << "]";
+            else               cout << " " << sortLabels[t] << " ";
+            if (t < 3) cout << " ";
+        }
+        // 우측: 현재 키워드 검색 상태 표시
+        cout << "    키워드 검색: ";
+        if (searchKeyword.empty()) cout << "-";
+        else                       cout << "\"" << searchKeyword << "\"";
+        cout << endl;
+
+        cout << "----------------------------------------" << endl;
+        cout << "↑↓:이동  ←→:페이지  Tab:정렬변경  F:키워드검색  Enter:선택  ESC:뒤로" << endl;
 
         int key = _getch();
         if (key == 224) {
+            // 화살표 키 (확장키)
             key = _getch();
             if (key == KEY_UP) {
-                if (focus > startIdx) focus--;
+                if (total > 0 && focus > startIdx) focus--;
             }
             else if (key == KEY_DOWN) {
-                if (focus < endIdx - 1) focus++;
+                if (total > 0 && focus < endIdx - 1) focus++;
             }
             else if (key == KEY_LEFT) {
                 if (currentPage > 0) focus = (currentPage - 1) * itemsPerPage;
@@ -462,10 +578,25 @@ void PracticeQuestionSearch()
                 if (currentPage < totalPages - 1) focus = (currentPage + 1) * itemsPerPage;
             }
         }
+        else if (key == KEY_TAB) {
+            // 정렬 모드 순환: 0 -> 1 -> 2 -> 3 -> 0
+            sortMode = (sortMode + 1) % 4;
+            focus = 0; // 정렬 바뀌면 첫 항목으로
+        }
+        else if (key == 'f' || key == 'F') {
+            // 검색 화면 진입
+            PromptSearchKeyword(searchKeyword);
+            focus = 0; // 검색 적용 후 첫 항목으로
+        }
         else if (key == KEY_ENTER) {
+            if (total == 0) continue; // 결과 없으면 무시
             // 추후 수정 예정 - 문제 상세 보기
+            // 현재는 선택된 원본 인덱스 정보만 알림 (디버깅용)
             screenClear();
-            cout << "추후 수정 예정입니다." << endl;
+            const Question& selected = questions[displayIdx[focus]];
+            cout << "선택된 문제: Lv." << selected.level
+                << "  키워드: " << (selected.searchKeyword.empty() ? "-" : selected.searchKeyword) << endl;
+            cout << "(상세 보기 기능은 추후 수정 예정)" << endl;
             cout << "아무 키나 눌러주세요..." << endl;
             _getch();
         }
