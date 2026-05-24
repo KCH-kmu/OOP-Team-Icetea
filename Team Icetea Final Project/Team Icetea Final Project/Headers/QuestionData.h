@@ -25,5 +25,4 @@ extern vector<Question> ExamQuestions;
 // ?????? ?ех? ??? ????
 void LoadAllQuestionData();
 
-void AddPracticeQuestion(const Question& newQuestion);
 void AddExamQuestion(const Question& newQuestion);

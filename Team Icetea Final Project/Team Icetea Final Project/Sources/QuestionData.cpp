@@ -3,149 +3,109 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <filesystem>
+#include <algorithm>
 
 using namespace std;
+namespace fs = std::filesystem;
 
-// 전역 벡터 정의
+// 전역 문제 데이터 벡터
 vector<Question> PracticeQuestions;
 vector<Question> ExamQuestions;
 
-// 내부에서만 쓰는 헬퍼 함수: 특정 속성(멤버)만 파일에서 읽어오기
-void LoadFileToVector(vector<Question>& targetVector, string filename, int type)
-{
-    ifstream file(filename);
-    if (!file.is_open())
-    {
-        cout << "Error: " << filename << " 파일을 찾을 수 없습니다." << endl;
-        return;
-    }
-
-    int count;
-    file >> count; // 1. 총 개수 읽기
-
-    // 개수 뒤의 엔터 키 처리 등 잔여 버퍼 비우기
-    string dummy;
-    getline(file, dummy);
-
-    if (type == 0) // 한글 이름 파일일 때만 벡터 크기 설정
-    {
-        targetVector.resize(count);
-    }
-
-    for (int i = 0; i < count; i++)
-    {
-        int index;
-        // 2. 인덱스 번호 읽기
-        if (!(file >> index)) break;
-
-        // **[수정 로직 시작]**: 숫자 뒤에 오는 모든 공백/탭 문자를 건너뜁니다.
-        char separator;
-        // 다음 문자를 읽지만, 스트림 위치는 옮기지 않습니다.
-        if (file.peek() == ' ' || file.peek() == '\t')
-        {
-             // 탭이나 공백이 있으면 읽어서 버립니다.
-             file.get(separator);
-             // 이후 공백/탭이 연속될 경우 모두 건너뜁니다.
-             while (file.peek() == ' ' || file.peek() == '\t')
-             {
-                 file.get(separator);
-             }
-        }
-        // **[수정 로직 끝]**
-
-        string line;
-        // 3. 나머지 문장(내용)을 읽음 (공백 포함)
-        getline(file, line);
-
-        // 줄바꿈 문자(\r)가 포함된 경우 제거 (윈도우 호환)
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-
-        // 타입에 따라 구조체의 적절한 변수에 저장
-        switch (type)
-        {
-        case 0: targetVector[i].nameKr = line; break;
-        case 1: targetVector[i].nameEn = line; break;
-        case 2: targetVector[i].character = line; break;
-        case 3: targetVector[i].desc = line; break;
-        case 4: targetVector[i].keyword = line; break;
-        }
-    }
-    file.close();
-}
-
-// [유지됨] 벡터의 내용을 파일로 저장하는 헬퍼 함수 (저장 시에는 공백 ' '을 사용)
-void WriteVectorToFile(const vector<Question>& targetVector, string filename, int type)
-{
-    ofstream file(filename);
-    if (!file.is_open())
-    {
-        cout << "Error: " << filename << " 저장 실패!" << endl;
-        return;
-    }
-
-    // 1. 맨 윗줄에 현재 개수 기록
-    file << targetVector.size() << endl;
-
-    // 2. 모든 문제 데이터를 순회하며 저장
-    for (size_t i = 0; i < targetVector.size(); ++i)
-    {
-        // "인덱스(i+1) + 공백 + 데이터" 형식으로 저장
-        file << (i + 1) << " ";
-
-        switch (type)
-        {
-        case 0: file << targetVector[i].nameKr << endl; break;
-        case 1: file << targetVector[i].nameEn << endl; break;
-        case 2: file << targetVector[i].character << endl; break;
-        case 3: file << targetVector[i].desc << endl; break;
-        case 4: file << targetVector[i].keyword << endl; break;
-        }
-    }
-    file.close();
-}
-
-// 아래 추가/로딩 함수들은 변경 사항 없음
-void AddPracticeQuestion(const Question& newQuestion)
-{
-    PracticeQuestions.push_back(newQuestion);
-    cout << "파일 저장 중..." << endl;
-    WriteVectorToFile(PracticeQuestions, "PracticeName_kr.txt", 0);
-    WriteVectorToFile(PracticeQuestions, "PracticeName_en.txt", 1);
-    WriteVectorToFile(PracticeQuestions, "PracticeCharacter.txt", 2);
-    WriteVectorToFile(PracticeQuestions, "PracticeDesc.txt", 3);
-    WriteVectorToFile(PracticeQuestions, "PracticeKeyword.txt", 4);
-    cout << "저장 완료!" << endl;
-}
-
+// ExamQuestionMake()에서 호출 - 현재는 비워둠 (MakeQuestion()이 CSV로 직접 저장)
 void AddExamQuestion(const Question& newQuestion)
 {
-    ExamQuestions.push_back(newQuestion);
-    cout << "파일 저장 중..." << endl;
-    WriteVectorToFile(ExamQuestions, "ExamName_kr.txt", 0);
-    WriteVectorToFile(ExamQuestions, "ExamName_en.txt", 1);
-    WriteVectorToFile(ExamQuestions, "ExamCharacter.txt", 2);
-    WriteVectorToFile(ExamQuestions, "ExamDesc.txt", 3);
-    WriteVectorToFile(ExamQuestions, "ExamKeyword.txt", 4);
-    cout << "저장 완료!" << endl;
+    (void)newQuestion;
 }
 
+// ===================================================
+// 시작 시 ./QuestionData/ 폴더의 모든 CSV를 스캔하여
+// PracticeQuestions에 로드합니다.
+// (ExamQuestions는 시험모드 진입 시 직접 로드)
+// ===================================================
 void LoadAllQuestionData()
 {
     cout << "데이터를 로딩 중입니다..." << endl;
 
-    // --- 연습문제 문제 로딩 ---
-    LoadFileToVector(PracticeQuestions, "PracticeName_kr.txt", 0);
-    LoadFileToVector(PracticeQuestions, "PracticeName_en.txt", 1);
-    LoadFileToVector(PracticeQuestions, "PracticeCharacter.txt", 2);
-    LoadFileToVector(PracticeQuestions, "PracticeDesc.txt", 3);
-    LoadFileToVector(PracticeQuestions, "PracticeKeyword.txt", 4);
+    // --- CSV-based: scan all .csv files in ./QuestionData/ ---
+    PracticeQuestions.clear();
+    string folderPath = "./QuestionData";
 
-    // --- 시험모드 문제 로딩 ---
-    LoadFileToVector(ExamQuestions, "ExamName_kr.txt", 0);
-    LoadFileToVector(ExamQuestions, "ExamName_en.txt", 1);
-    LoadFileToVector(ExamQuestions, "ExamCharacter.txt", 2);
-    LoadFileToVector(ExamQuestions, "ExamDesc.txt", 3);
-    LoadFileToVector(ExamQuestions, "ExamKeyword.txt", 4);
+    if (fs::exists(folderPath))
+    {
+        vector<fs::path> csvFiles;
+        for (const auto& entry : fs::directory_iterator(folderPath))
+        {
+            if (entry.path().extension() == ".csv")
+                csvFiles.push_back(entry.path());
+        }
 
-    cout << "로딩 완료! (연습문제: " << PracticeQuestions.size() << "개, 시험모드: " << ExamQuestions.size() << "개)" << endl;
+        // Sort by leading number in filename (e.g. "1. Test1.csv" -> 1)
+        sort(csvFiles.begin(), csvFiles.end(), [](const fs::path& a, const fs::path& b)
+        {
+            int na = 0, nb = 0;
+            try { na = stoi(a.stem().string()); } catch (...) {}
+            try { nb = stoi(b.stem().string()); } catch (...) {}
+            return na < nb;
+        });
+
+        for (const auto& csvPath : csvFiles)
+        {
+            ifstream csvFile(csvPath);
+            if (!csvFile.is_open()) continue;
+
+            string line;
+            getline(csvFile, line); // skip header row (Q.DataID, Q.Desc, ...)
+
+            while (getline(csvFile, line))
+            {
+                if (line.empty()) continue;
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+
+                // Simple CSV parse with quoted-field support
+                vector<string> fields;
+                string cell;
+                bool inQ = false;
+                for (size_t ci = 0; ci < line.length(); ci++)
+                {
+                    char c = line[ci];
+                    if (inQ)
+                    {
+                        if (c == '"' && ci + 1 < line.length() && line[ci + 1] == '"')
+                        { cell += '"'; ci++; }
+                        else if (c == '"') inQ = false;
+                        else cell += c;
+                    }
+                    else
+                    {
+                        if (c == '"' && cell.empty()) inQ = true;
+                        else if (c == ',') { fields.push_back(cell); cell.clear(); }
+                        else cell += c;
+                    }
+                }
+                fields.push_back(cell);
+
+                // columns: DataID, Desc, Answer, W1, W2, W3, Difficulty, Explanation, Keyword
+                if (fields.size() >= 6)
+                {
+                    Question q;
+                    q.desc          = fields[1];
+                    q.nameKr        = fields[2]; // correct answer
+                    q.nameEn        = fields[3]; // wrong answer 1
+                    q.character     = fields[4]; // wrong answer 2
+                    q.keyword       = fields[5]; // wrong answer 3
+                    q.level         = (fields.size() > 6 && !fields[6].empty()) ? stoi(fields[6]) : 0;
+                    q.commentary    = (fields.size() > 7) ? fields[7] : "";
+                    q.searchKeyword = (fields.size() > 8) ? fields[8] : "";
+                    PracticeQuestions.push_back(q);
+                }
+            }
+            csvFile.close();
+        }
+    }
+
+    // ExamQuestions: loaded on demand inside ExamQuestionSolve() via SelectSubjectMenu() + CSV
+
+    cout << "로딩 완료! (총 " << PracticeQuestions.size() << "개 문제)" << endl;
 }
