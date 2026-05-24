@@ -11,6 +11,9 @@
 #include <random>
 #include <fstream>
 #include <sstream>
+#include <conio.h>
+#include <thread> // 타이밍 루프를 위해 추가
+#include <chrono>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -1093,5 +1096,403 @@ void BossMonsterMode()
     cout << "===============================" << endl;
     cout << "아무 키나 누르면 메뉴로 돌아갑니다..." << endl;
 
+    _getch();
+}
+
+static void PrintTower(int floor, int lives, int combo, int score)
+{
+    string livesStr = "";
+    for (int i = 0; i < lives; i++)  livesStr += " [O]";
+    for (int i = lives; i < 3; i++)  livesStr += " [ ]";
+
+    cout << "\n";
+    for (int f = floor + 2; f >= floor - 2; f--) {
+        if (f < 1) { cout << "  |            |\n"; continue; }
+        if (f == floor)
+            cout << "  |==[" << f << "F HERE]==|\n";
+        else
+            cout << "  |     " << f << "F      |\n";
+    }
+    cout << "  |____________|\n";
+    cout << "\n";
+    cout << "  목숨:" << livesStr << "   콤보: x" << combo
+        << "   점수: " << score << "\n";
+    cout << "-----------------------------------------\n";
+}
+
+// -- 내부 헬퍼: 4지선다 보기 만들기 ------------------------------
+static void BuildTowerChoices(const vector<Question>& pool, int qIdx,
+    vector<string>& choices, int& answerSlot)
+{
+    const Question& cur = pool[qIdx];
+    vector<string> wrongs;
+
+    if (!cur.nameEn.empty())    wrongs.push_back(cur.nameEn);
+    if (!cur.character.empty()) wrongs.push_back(cur.character);
+    if (!cur.keyword.empty())   wrongs.push_back(cur.keyword);
+
+    while ((int)wrongs.size() < 3) {
+        int fallback = rand() % (int)pool.size();
+        if (fallback != qIdx && pool[fallback].nameKr != cur.nameKr)
+            wrongs.push_back(pool[fallback].nameKr);
+    }
+
+    answerSlot = rand() % 4;
+    choices.clear();
+    int wi = 0;
+    for (int i = 0; i < 4; i++)
+        choices.push_back((i == answerSlot) ? cur.nameKr : wrongs[wi++]);
+}
+
+// -- 난이도 단계 텍스트 -------------------------------------------
+static string GetDifficultyLabel(int floor)
+{
+    if (floor < 10)  return "[1] 입문";
+    if (floor < 20)  return "[2] 초급";
+    if (floor < 30)  return "[3] 중급";
+    if (floor < 40)  return "[4] 고급";
+    return "[5] 전문가";
+}
+
+// -- 보스층 여부 --------------------------------------------------
+static bool IsBossFloor(int floor)
+{
+    return floor > 0 && floor % 10 == 0;
+}
+
+// -- 최종 등급 텍스트 ---------------------------------------------
+static string GetGrade(int floor)
+{
+    if (floor >= 50) return "  [ LEGEND  ] 당신은 탑의 정복자입니다!";
+    if (floor >= 40) return "  [ MASTER  ] 놀라운 실력입니다!";
+    if (floor >= 30) return "  [ GOLD    ] 뛰어난 도전자입니다!";
+    if (floor >= 20) return "  [ SILVER  ] 훌륭한 도전이었습니다!";
+    if (floor >= 10) return "  [ BRONZE  ] 좋은 시작이었습니다!";
+    return "  [ BEGINNER] 다음엔 더 높이 올라가 보세요!";
+}
+
+// -- 공통 퀴즈 화면 출력 ------------------------------------------
+static void PrintQuizScreen(int floor, int lives, int combo, int score,
+    bool isBoss, int bossCorrect, int bossRequired,
+    bool itemFloor, bool shieldUsed,
+    const string& desc, const vector<string>& choices,
+    int focusChoice)
+{
+    screenClear();
+
+    if (isBoss) {
+        string livesStr = "";
+        for (int i = 0; i < lives; i++)  livesStr += "[O]";
+        for (int i = lives; i < 3; i++)  livesStr += "[ ]";
+        cout << "=========== BOSS " << floor << "층 ["
+            << bossCorrect << "/" << bossRequired << "] ===========\n";
+        cout << " 목숨: " << livesStr
+            << "   콤보: x" << combo
+            << "   점수: " << score << "\n";
+    }
+    else {
+        PrintTower(floor, lives, combo, score);
+    }
+
+    cout << " 난이도: " << GetDifficultyLabel(floor) << "\n";
+    if (itemFloor && !shieldUsed)
+        cout << " [SHIELD] 실드 보유 중\n";
+    cout << "-----------------------------------------\n";
+
+    if (floor >= 30 && !isBoss)
+        cout << " 문제: " << desc << "\n (힌트 없음 - 고난이도 구간)\n";
+    else
+        cout << " 문제: " << desc << "\n";
+
+    cout << "-----------------------------------------\n";
+    for (int k = 0; k < 4; k++) {
+        cout << (k == focusChoice ? " > " : "   ")
+            << k + 1 << ". " << choices[k] << "\n";
+    }
+    cout << "-----------------------------------------\n";
+    cout << " ^v: 이동  Enter: 선택  ESC: 게임 종료\n";
+}
+
+// =================================================================
+// * 메인 함수 *
+// =================================================================
+void InfiniteTowerMode()
+{
+    // -- 과목 선택 ------------------------------------------------
+    string selectedFile = SelectSubjectMenu("무한의 탑: 오를 과목을 선택하세요");
+    if (selectedFile.empty()) return;
+
+    vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
+    if (quizList.size() < 4) {
+        screenClear();
+        cout << "  [오류] 문제가 4개 이상 필요합니다.\n";
+        cout << "  아무 키나 눌러주세요...";
+        _getch();
+        return;
+    }
+
+    srand((unsigned)time(nullptr));
+
+    // -- 인트로 연출 ----------------------------------------------
+    screenClear();
+    cout << "\n";
+    cout << "  +----------------------------------+\n";
+    cout << "  |       **  무한의 탑  **          |\n";
+    cout << "  |                                  |\n";
+    cout << "  |  * 목숨 3개로 시작합니다         |\n";
+    cout << "  |  * 정답을 맞추면 층이 올라가요   |\n";
+    cout << "  |  * 오답 -> 목숨 -1               |\n";
+    cout << "  |  * 5콤보마다 목숨 +1 회복        |\n";
+    cout << "  |  * 10층마다 보스전 등장!         |\n";
+    cout << "  |  * 목숨이 다하면 게임 종료       |\n";
+    cout << "  +----------------------------------+\n";
+    cout << "\n  아무 키나 누르면 시작합니다...\n";
+    _getch();
+
+    // -- 게임 변수 초기화 -----------------------------------------
+    int  lives = 3;
+    int  maxLives = 5;
+    int  floor = 0;
+    int  combo = 0;
+    int  score = 0;
+    int  bestCombo = 0;
+    int  correctCnt = 0;
+    int  wrongCnt = 0;
+    bool shieldUsed = false;
+
+    // -- 메인 루프 ------------------------------------------------
+    while (lives > 0) {
+        floor++;
+        bool boss = IsBossFloor(floor);
+
+        // +-------------------------------------------------------+
+        // | 보스층 진입 연출                                       |
+        // +-------------------------------------------------------+
+        if (boss) {
+            screenClear();
+            cout << "\n";
+            cout << "  +======================================+\n";
+            cout << "  |  !! " << floor << "층  BOSS FLOOR 등장!  !!    |\n";
+            cout << "  |  4지선다 3문제 연속 정답으로 통과!  |\n";
+            cout << "  |  틀리면 처음부터 + 목숨 -1          |\n";
+            cout << "  +======================================+\n";
+            cout << "\n";
+            cout << "            /\\_____/\\\n";
+            cout << "           /  o   o  \\\n";
+            cout << "          ( ==  ^  == )\n";
+            cout << "           )         (\n";
+            cout << "          (           )\n";
+            cout << "         ( (  )   (  ) )\n";
+            cout << "        (__(__)___(__)__)\n";
+            cout << "\n        [ BOSS MONSTER ]\n";
+            cout << "\n  아무 키나 누르면 시작...\n";
+            _getch();
+        }
+
+        // +-------------------------------------------------------+
+        // | 보스층: 4지선다 3문제 연속 정답                        |
+        // +-------------------------------------------------------+
+        if (boss) {
+            const int bossRequired = 3;
+            int bossCorrect = 0;
+            shieldUsed = false;
+
+            while (bossCorrect < bossRequired && lives > 0) {
+                int idx = rand() % (int)quizList.size();
+                vector<string> choices;
+                int answerSlot = 0;
+                BuildTowerChoices(quizList, idx, choices, answerSlot);
+
+                int  focusChoice = 0;
+                bool answered = false;
+
+                while (!answered) {
+                    PrintQuizScreen(floor, lives, combo, score,
+                        true, bossCorrect, bossRequired,
+                        false, false,
+                        quizList[idx].desc, choices, focusChoice);
+
+                    int key = _getch();
+                    if (key == 224) {
+                        key = _getch();
+                        if (key == KEY_UP)
+                            focusChoice = (focusChoice - 1 + 4) % 4;
+                        else if (key == KEY_DOWN)
+                            focusChoice = (focusChoice + 1) % 4;
+                    }
+                    else if (key == KEY_ENTER) {
+                        answered = true;
+                        if (focusChoice == answerSlot) {
+                            bossCorrect++;
+                            combo++;
+                            if (combo > bestCombo) bestCombo = combo;
+                            score += 200 + (combo * 50);
+                            correctCnt++;
+                            screenClear();
+                            cout << "\n  [O] 정답! BOSS ["
+                                << bossCorrect << "/" << bossRequired << "]\n";
+                            cout << "  아무 키나 누르면 계속...\n";
+                            _getch();
+                        }
+                        else {
+                            lives--;
+                            combo = 0;
+                            bossCorrect = 0;
+                            wrongCnt++;
+                            screenClear();
+                            cout << "\n  [X] 오답! 정답: "
+                                << quizList[idx].nameKr
+                                << "\n  목숨 -1  보스전 처음부터!\n";
+                            cout << "  아무 키나 누르면 계속...\n";
+                            _getch();
+                        }
+                    }
+                    else if (key == KEY_ESC) {
+                        goto GameOver;
+                    }
+                }
+            } // while bossCorrect
+
+            // 보스 클리어 보상
+            if (lives > 0) {
+                int oldLives = lives;
+                lives = min(lives + 1, maxLives);
+                score += 500;
+                screenClear();
+                cout << "\n  [CLEAR!] BOSS 클리어!  목숨 +" << (lives - oldLives)
+                    << " 보상!  +500점!\n";
+                cout << "  현재 목숨: ";
+                for (int i = 0; i < lives; i++) cout << "[O]";
+                cout << "\n\n  아무 키나 누르면 계속...\n";
+                _getch();
+            }
+            continue;
+        } // if (boss)
+
+        // +-------------------------------------------------------+
+        // | 일반 층: 4지선다 1문제                                  |
+        // +-------------------------------------------------------+
+        {
+            // 5의 배수 층 = 아이템 층
+            bool itemFloor = (floor % 5 == 0);
+            if (itemFloor) {
+                screenClear();
+                cout << "\n";
+                cout << "  +==============================+\n";
+                cout << "  |  [ITEM] " << floor << "층  아이템 층!     |\n";
+                cout << "  |  이번 층은 실드가 지급됩니다 |\n";
+                cout << "  |  (오답 1회 목숨 보호!)       |\n";
+                cout << "  +==============================+\n";
+                cout << "\n  아무 키나 누르면 계속...\n";
+                shieldUsed = false;
+                _getch();
+            }
+
+            int idx = rand() % (int)quizList.size();
+            vector<string> choices;
+            int  answerSlot = 0;
+            int  focusChoice = 0;
+            bool answered = false;
+            BuildTowerChoices(quizList, idx, choices, answerSlot);
+
+            while (!answered) {
+                PrintQuizScreen(floor, lives, combo, score,
+                    false, 0, 0,
+                    itemFloor, shieldUsed,
+                    quizList[idx].desc, choices, focusChoice);
+
+                int key = _getch();
+                if (key == 224) {
+                    key = _getch();
+                    if (key == KEY_UP)
+                        focusChoice = (focusChoice - 1 + 4) % 4;
+                    else if (key == KEY_DOWN)
+                        focusChoice = (focusChoice + 1) % 4;
+                }
+                else if (key == KEY_ENTER) {
+                    answered = true;
+                    if (focusChoice == answerSlot) {
+                        // -- 정답 처리 --------------------------
+                        combo++;
+                        if (combo > bestCombo) bestCombo = combo;
+                        int gain = 100 + (combo * 20);
+                        if (floor >= 30) gain = (int)(gain * 1.5);
+                        if (floor >= 40) gain = (int)(gain * 2.0);
+                        score += gain;
+                        correctCnt++;
+
+                        screenClear();
+                        cout << "\n  [O] 정답!  +" << gain << "점";
+                        if (combo >= 3)
+                            cout << "  ** " << combo << " COMBO! **";
+                        cout << "\n";
+
+                        // 5콤보 목숨 회복
+                        if (combo % 5 == 0) {
+                            int oldLives = lives;
+                            lives = min(lives + 1, maxLives);
+                            if (lives > oldLives)
+                                cout << "  [+1] " << combo << "콤보 달성! 목숨 +1!\n";
+                        }
+                        cout << "\n  아무 키나 누르면 계속...\n";
+                        _getch();
+                    }
+                    else {
+                        // -- 오답 처리 --------------------------
+                        if (itemFloor && !shieldUsed) {
+                            shieldUsed = true;
+                            combo = 0;
+                            wrongCnt++;
+                            screenClear();
+                            cout << "\n  [X] 오답!  [SHIELD] 실드 발동 -> 목숨 보호!\n";
+                            cout << "  정답: " << quizList[idx].nameKr << "\n";
+                        }
+                        else {
+                            lives--;
+                            combo = 0;
+                            wrongCnt++;
+                            screenClear();
+                            cout << "\n  [X] 오답! 정답: "
+                                << quizList[idx].nameKr << "  목숨 -1\n";
+                        }
+                        cout << "\n  아무 키나 누르면 계속...\n";
+                        _getch();
+                    }
+                }
+                else if (key == KEY_ESC) {
+                    goto GameOver;
+                }
+            }
+        } // 일반층 블록
+    } // while lives > 0
+
+    // =============================================================
+    // * GAME OVER 화면 *
+    // =============================================================
+GameOver:
+    floor--;
+    if (floor < 0) floor = 0;
+
+    screenClear();
+    cout << "\n";
+    cout << "  +====================================+\n";
+    cout << "  |           ** GAME OVER **          |\n";
+    cout << "  +====================================+\n";
+    cout << "  |  도달한 층  :  " << floor << " 층\n";
+    cout << "  |  최종 점수  : " << score << " 점\n";
+    cout << "  |  정답 수    : " << correctCnt << " 문제\n";
+    cout << "  |  오답 수    : " << wrongCnt << " 문제\n";
+    cout << "  |  최고 콤보  : x" << bestCombo << "\n";
+    cout << "  +====================================+\n";
+    cout << GetGrade(floor) << "\n";
+    cout << "  +====================================+\n";
+
+    int total = correctCnt + wrongCnt;
+    if (total > 0) {
+        int pct = (correctCnt * 100) / total;
+        cout << "\n  정답률: " << pct << "%\n";
+    }
+
+    cout << "\n  아무 키나 누르면 메뉴로 돌아갑니다...\n";
     _getch();
 }

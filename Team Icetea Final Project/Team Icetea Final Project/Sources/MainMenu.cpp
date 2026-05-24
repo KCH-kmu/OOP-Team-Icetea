@@ -151,9 +151,7 @@ void ShowGameModeMenu(int logoWidth)
             }
             else if (focus == 2)
             {
-                cout << "무한모드는 추후 제작 예정입니다." << endl;
-                cout << "계속하려면 아무 키나 누르세요..." << endl;
-                _getch();
+                InfiniteTowerMode();
             }
         }
         else if (getkey == KEY_ESC)

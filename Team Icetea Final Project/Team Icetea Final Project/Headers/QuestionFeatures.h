@@ -9,3 +9,4 @@ void PracticeQuestionSolve(); // NEW
 void ExamQuestionSolve(); // NEW
 
 void BossMonsterMode(); // 게임모드 함수 시작
+void InfiniteTowerMode(); // 무한모드
