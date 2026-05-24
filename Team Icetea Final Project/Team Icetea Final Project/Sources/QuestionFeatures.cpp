@@ -1,26 +1,26 @@
-ï»¿#include "QuestionFeatures.h"
+#include "QuestionFeatures.h"
 #include "QuestionData.h"
 #include "Utils.h"
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm> // min, max ì‚¬ìš©
-#include <ctime> // time() ì‚¬ìš©
-#include <cstdlib> // rand(), srand() ì‚¬ìš©
-#include <filesystem> // íŒŒì¼ ëª©ë¡ íƒìƒ‰
+#include <algorithm> // min, max »ç¿ë
+#include <ctime> // time() »ç¿ë
+#include <cstdlib> // rand(), srand() »ç¿ë
+#include <filesystem> // ÆÄÀÏ ¸ñ·Ï Å½»ö
 #include <random>
 #include <fstream>
 #include <sstream>
 #include <conio.h>
-#include <thread> // íƒ€ì´ë° ë£¨í”„ë¥¼ ìœ„í•´ ì¶”ê°€
+#include <thread> // Å¸ÀÌ¹Ö ·çÇÁ¸¦ À§ÇØ Ãß°¡
 #include <chrono>
-#include <iomanip> // setw ë“± ì¶œë ¥ ì •ë ¬ì„ ìœ„í•´ ì¶”ê°€
+#include <iomanip> // setw µî Ãâ·Â Á¤·ÄÀ» À§ÇØ Ãß°¡
 
 using namespace std;
 namespace fs = std::filesystem;
 
-// ===== ì •ë ¬/ê²€ìƒ‰ ë³´ì¡° í•¨ìˆ˜ë“¤ =====
-// ì˜ë¬¸ ëŒ€ë¬¸ìë§Œ ì†Œë¬¸ìë¡œ ë³€í™˜ (í•œê¸€ 2ë°”ì´íŠ¸ ì‹œí€€ìŠ¤ëŠ” ê±´ë“œë¦¬ì§€ ì•ŠìŒ)
+// ===== Á¤·Ä/°Ë»ö º¸Á¶ ÇÔ¼öµé =====
+// ¿µ¹® ´ë¹®ÀÚ¸¸ ¼Ò¹®ÀÚ·Î º¯È¯ (ÇÑ±Û 2¹ÙÀÌÆ® ½ÃÄö½º´Â °Çµå¸®Áö ¾ÊÀ½)
 static string ToLowerCopy(const string& s) {
     string r = s;
     for (size_t i = 0; i < r.size(); i++) {
@@ -32,38 +32,38 @@ static string ToLowerCopy(const string& s) {
     return r;
 }
 
-// ëŒ€ì†Œë¬¸ì ë¬´ì‹œ ë¶€ë¶„ì¼ì¹˜ ê²€ì‚¬
+// ´ë¼Ò¹®ÀÚ ¹«½Ã ºÎºĞÀÏÄ¡ °Ë»ç
 static bool ContainsCI(const string& haystack, const string& needleLower) {
     if (needleLower.empty()) return true;
     string lowHay = ToLowerCopy(haystack);
     return lowHay.find(needleLower) != string::npos;
 }
 
-// ì •ë ¬ ëª¨ë“œ enum ëŒ€ìš© ìƒìˆ˜
-// 0: ë²ˆí˜¸ ì˜¤ë¦„ì°¨ìˆœ, 1: ë²ˆí˜¸ ë‚´ë¦¼ì°¨ìˆœ, 2: ë ˆë²¨ ì˜¤ë¦„ì°¨ìˆœ, 3: ë ˆë²¨ ë‚´ë¦¼ì°¨ìˆœ
-// ì •ë ¬+ê²€ìƒ‰ ê²°ê³¼ë¡œ í™”ë©´ì— í‘œì‹œí•  ì›ë³¸ ì¸ë±ìŠ¤ ëª©ë¡ì„ ìƒì„±
+// Á¤·Ä ¸ğµå enum ´ë¿ë »ó¼ö
+// 0: ¹øÈ£ ¿À¸§Â÷¼ø, 1: ¹øÈ£ ³»¸²Â÷¼ø, 2: ·¹º§ ¿À¸§Â÷¼ø, 3: ·¹º§ ³»¸²Â÷¼ø
+// Á¤·Ä+°Ë»ö °á°ú·Î È­¸é¿¡ Ç¥½ÃÇÒ ¿øº» ÀÎµ¦½º ¸ñ·ÏÀ» »ı¼º
 static vector<int> BuildDisplayIndex(const vector<Question>& src, int sortMode, const string& searchLower) {
     vector<int> idx;
     idx.reserve(src.size());
     for (int i = 0; i < (int)src.size(); i++) {
-        // ê²€ìƒ‰ì–´ê°€ ì—†ìœ¼ë©´ ëª¨ë‘ í†µê³¼, ìˆìœ¼ë©´ searchKeyword í•„ë“œì—ì„œ ë¶€ë¶„ì¼ì¹˜ í™•ì¸
+        // °Ë»ö¾î°¡ ¾øÀ¸¸é ¸ğµÎ Åë°ú, ÀÖÀ¸¸é searchKeyword ÇÊµå¿¡¼­ ºÎºĞÀÏÄ¡ È®ÀÎ
         if (searchLower.empty() || ContainsCI(src[i].searchKeyword, searchLower)) {
             idx.push_back(i);
         }
     }
     switch (sortMode) {
-    case 0: // ë²ˆí˜¸ ì˜¤ë¦„ì°¨ìˆœ (ì›ë³¸ ì¸ë±ìŠ¤ ìˆœ)
+    case 0: // ¹øÈ£ ¿À¸§Â÷¼ø (¿øº» ÀÎµ¦½º ¼ø)
         sort(idx.begin(), idx.end());
         break;
-    case 1: // ë²ˆí˜¸ ë‚´ë¦¼ì°¨ìˆœ
+    case 1: // ¹øÈ£ ³»¸²Â÷¼ø
         sort(idx.begin(), idx.end(), greater<int>());
         break;
-    case 2: // ë ˆë²¨ ì˜¤ë¦„ì°¨ìˆœ (ê°™ì€ ë ˆë²¨ì€ ì›ë³¸ ë²ˆí˜¸ ìˆœ ìœ ì§€)
+    case 2: // ·¹º§ ¿À¸§Â÷¼ø (°°Àº ·¹º§Àº ¿øº» ¹øÈ£ ¼ø À¯Áö)
         stable_sort(idx.begin(), idx.end(), [&](int a, int b) {
             return src[a].level < src[b].level;
             });
         break;
-    case 3: // ë ˆë²¨ ë‚´ë¦¼ì°¨ìˆœ
+    case 3: // ·¹º§ ³»¸²Â÷¼ø
         stable_sort(idx.begin(), idx.end(), [&](int a, int b) {
             return src[a].level > src[b].level;
             });
@@ -72,26 +72,26 @@ static vector<int> BuildDisplayIndex(const vector<Question>& src, int sortMode, 
     return idx;
 }
 
-// í‚¤ì›Œë“œ ê²€ìƒ‰ ì…ë ¥ í™”ë©´ - ì‚¬ìš©ìê°€ ì…ë ¥í•œ ê²€ìƒ‰ì–´ë¡œ currentKeywordë¥¼ ê°±ì‹ 
-// ë¹ˆ ë¬¸ìì—´ë¡œ Enter ì‹œ ê²€ìƒ‰ í•´ì œ
+// Å°¿öµå °Ë»ö ÀÔ·Â È­¸é - »ç¿ëÀÚ°¡ ÀÔ·ÂÇÑ °Ë»ö¾î·Î currentKeyword¸¦ °»½Å
+// ºó ¹®ÀÚ¿­·Î Enter ½Ã °Ë»ö ÇØÁ¦
 static void PromptSearchKeyword(string& currentKeyword) {
     screenClear();
-    cout << "=== í‚¤ì›Œë“œ ê²€ìƒ‰ ===" << endl;
+    cout << "=== Å°¿öµå °Ë»ö ===" << endl;
     cout << "----------------------------------------" << endl;
-    cout << "ê²€ìƒ‰ì–´ë¥¼ ì…ë ¥í•˜ì„¸ìš”." << endl;
-    cout << "(ë¹ˆ ì±„ë¡œ Enter ì‹œ ê²€ìƒ‰ì´ í•´ì œë©ë‹ˆë‹¤)" << endl;
+    cout << "°Ë»ö¾î¸¦ ÀÔ·ÂÇÏ¼¼¿ä." << endl;
+    cout << "(ºó Ã¤·Î Enter ½Ã °Ë»öÀÌ ÇØÁ¦µË´Ï´Ù)" << endl;
     cout << "----------------------------------------" << endl;
     if (!currentKeyword.empty()) {
-        cout << "í˜„ì¬ ì ìš©ëœ ê²€ìƒ‰ì–´: \"" << currentKeyword << "\"" << endl;
+        cout << "ÇöÀç Àû¿ëµÈ °Ë»ö¾î: \"" << currentKeyword << "\"" << endl;
     }
-    cout << "ê²€ìƒ‰ì–´: ";
+    cout << "°Ë»ö¾î: ";
 
     string input;
     getline(cin, input);
     currentKeyword = input;
 }
 
-// CSVì˜ í•œ ì¤„ì„ íŒŒì‹±í•˜ëŠ” í•¨ìˆ˜ (ì‚¬ìš©ì ì •ì˜ ê·œì¹™ ì ìš©)
+// CSVÀÇ ÇÑ ÁÙÀ» ÆÄ½ÌÇÏ´Â ÇÔ¼ö (»ç¿ëÀÚ Á¤ÀÇ ±ÔÄ¢ Àû¿ë)
 vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
     vector<string> result;
     string cell;
@@ -109,11 +109,11 @@ vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
                         i++;
                     }
                     else {
-                        inQuotes = false; // ë‹«ëŠ” ë”°ì˜´í‘œ
+                        inQuotes = false; // ´İ´Â µû¿ÈÇ¥
                     }
                 }
                 else {
-                    cell += c; // í°ë”°ì˜´í‘œ ì•ˆì˜ ë¬¸ìëŠ” ì¤„ë°”ê¿ˆ í¬í•¨ ê·¸ëŒ€ë¡œ ì €ì¥
+                    cell += c; // Å«µû¿ÈÇ¥ ¾ÈÀÇ ¹®ÀÚ´Â ÁÙ¹Ù²Ş Æ÷ÇÔ ±×´ë·Î ÀúÀå
                 }
             }
             else {
@@ -128,11 +128,11 @@ vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
             }
         }
 
-        // ë”°ì˜´í‘œê°€ ë‹«íˆì§€ ì•Šì•˜ëŠ”ë° ì¤„ì´ ëë‚¬ë‹¤ë©´, íŒŒì¼ì—ì„œ ë‹¤ìŒ ì¤„ì„ ë” ì½ì–´ì˜´
+        // µû¿ÈÇ¥°¡ ´İÈ÷Áö ¾Ê¾Ò´Âµ¥ ÁÙÀÌ ³¡³µ´Ù¸é, ÆÄÀÏ¿¡¼­ ´ÙÀ½ ÁÙÀ» ´õ ÀĞ¾î¿È
         if (inQuotes && !file.eof()) {
             string nextLine;
             if (getline(file, nextLine)) {
-                cell += "\n"; // ì¤„ë°”ê¿ˆ ë¬¸ì ìœ ì§€
+                cell += "\n"; // ÁÙ¹Ù²Ş ¹®ÀÚ À¯Áö
                 currentLine = nextLine;
                 continue;
             }
@@ -143,44 +143,44 @@ vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
     return result;
 }
 
-// í´ë” ë‚´ì˜ CSV íŒŒì¼ ëª©ë¡ì„ íƒìƒ‰í•˜ì—¬ ê³¼ëª© ì„ íƒ ë©”ë‰´ ì¶œë ¥
-// title íŒŒë¼ë¯¸í„°ë¡œ í—¤ë” ë¬¸êµ¬ ë³€ê²½ ê°€ëŠ¥ (ê¸°ë³¸ê°’: "í•™ìŠµí•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”")
-string SelectSubjectMenu(string title = "í•™ìŠµí•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”") {
-    vector<pair<string, string>> subjects; // ê³¼ëª©ì½”ë“œ.ì´ë¦„, ì „ì²´ê²½ë¡œ
+// Æú´õ ³»ÀÇ CSV ÆÄÀÏ ¸ñ·ÏÀ» Å½»öÇÏ¿© °ú¸ñ ¼±ÅÃ ¸Ş´º Ãâ·Â
+// title ÆÄ¶ó¹ÌÅÍ·Î Çì´õ ¹®±¸ º¯°æ °¡´É (±âº»°ª: "ÇĞ½ÀÇÒ °ú¸ñÀ» ¼±ÅÃÇÏ¼¼¿ä")
+string SelectSubjectMenu(string title = "ÇĞ½ÀÇÒ °ú¸ñÀ» ¼±ÅÃÇÏ¼¼¿ä") {
+    vector<pair<string, string>> subjects; // °ú¸ñÄÚµå.ÀÌ¸§, ÀüÃ¼°æ·Î
 
-    // í˜„ì¬ ë””ë ‰í† ë¦¬ì—ì„œ .csv í™•ì¥ì íŒŒì¼ë§Œ ìˆ˜ì§‘
+    // ÇöÀç µğ·ºÅä¸®¿¡¼­ .csv È®ÀåÀÚ ÆÄÀÏ¸¸ ¼öÁı
     string folderPath = "./QuestionData";
 
-    // í´ë”ê°€ ì—†ëŠ” ê²½ìš° ì•Œë¦¼
+    // Æú´õ°¡ ¾ø´Â °æ¿ì ¾Ë¸²
     if (!fs::exists(folderPath)) {
         screenClear();
-        cout << "[ì˜¤ë¥˜] í´ë”ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: " << folderPath << endl;
-        cout << "ìƒëŒ€ ê²½ë¡œ í™•ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤." << endl;
+        cout << "[¿À·ù] Æú´õ¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù: " << folderPath << endl;
+        cout << "»ó´ë °æ·Î È®ÀÎÀÌ ÇÊ¿äÇÕ´Ï´Ù." << endl;
         _getch();
         return "";
     }
 
     try {
         for (const auto& entry : fs::directory_iterator(folderPath)) {
-            // .csv í™•ì¥ì íŒŒì¼ë§Œ í•„í„°ë§
+            // .csv È®ÀåÀÚ ÆÄÀÏ¸¸ ÇÊÅÍ¸µ
             if (entry.path().extension() == ".csv") {
                 subjects.push_back({ entry.path().stem().string(), entry.path().string() });
             }
         }
     }
     catch (...) {
-        cout << "í´ë” íƒìƒ‰ ì¤‘ ì˜¤ë¥˜ ë°œìƒ!" << endl;
+        cout << "Æú´õ Å½»ö Áß ¿À·ù ¹ß»ı!" << endl;
         _getch();
         return "";
     }
 
     if (subjects.empty()) {
-        cout << "ì‚¬ìš© ê°€ëŠ¥í•œ CSV ë¬¸ì œ íŒŒì¼ì´ ì—†ìŠµë‹ˆë‹¤." << endl;
+        cout << "»ç¿ë °¡´ÉÇÑ CSV ¹®Á¦ ÆÄÀÏÀÌ ¾ø½À´Ï´Ù." << endl;
         _getch();
         return "";
     }
 
-    // íŒŒì¼ëª… ì•ì˜ ìˆ«ìë¥¼ ê¸°ì¤€ìœ¼ë¡œ ì˜¤ë¦„ì°¨ìˆœ ì •ë ¬ (ì˜ˆ: "1. Test1" â†’ 1, "100. Test100" â†’ 100)
+    // ÆÄÀÏ¸í ¾ÕÀÇ ¼ıÀÚ¸¦ ±âÁØÀ¸·Î ¿À¸§Â÷¼ø Á¤·Ä (¿¹: "1. Test1" ¡æ 1, "100. Test100" ¡æ 100)
     sort(subjects.begin(), subjects.end(), [](const pair<string, string>& a, const pair<string, string>& b) {
         int numA = 0, numB = 0;
         try { numA = stoi(a.first); } catch (...) {}
@@ -193,7 +193,7 @@ string SelectSubjectMenu(string title = "í•™ìŠµí•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”") {
     int total = (int)subjects.size();
 
     while (true) {
-        // í˜„ì¬ í¬ì»¤ìŠ¤ ìœ„ì¹˜ì— ë”°ë¼ í˜ì´ì§€ ìë™ ê³„ì‚°
+        // ÇöÀç Æ÷Ä¿½º À§Ä¡¿¡ µû¶ó ÆäÀÌÁö ÀÚµ¿ °è»ê
         int totalPages = (total + itemsPerPage - 1) / itemsPerPage;
         int currentPage = focus / itemsPerPage; // 0-indexed
         int startIdx = currentPage * itemsPerPage;
@@ -209,25 +209,25 @@ string SelectSubjectMenu(string title = "í•™ìŠµí•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”") {
         }
 
         cout << "--------------------------------" << endl;
-        // ê³¼ëª©ì´ 10ê°œ ì´ˆê³¼ì¼ ë•Œë§Œ í˜ì´ì§€ í‘œì‹œ
+        // °ú¸ñÀÌ 10°³ ÃÊ°úÀÏ ¶§¸¸ ÆäÀÌÁö Ç¥½Ã
         if (totalPages > 1) {
-            cout << "        " << (currentPage + 1) << " / " << totalPages << " í˜ì´ì§€" << endl;
+            cout << "        " << (currentPage + 1) << " / " << totalPages << " ÆäÀÌÁö" << endl;
             cout << "--------------------------------" << endl;
-            cout << "â†‘â†“: ì´ë™  â†â†’: í˜ì´ì§€  Enter: ì„ íƒ  ESC: ì·¨ì†Œ" << endl;
+            cout << "¡è¡é: ÀÌµ¿  ¡ç¡æ: ÆäÀÌÁö  Enter: ¼±ÅÃ  ESC: Ãë¼Ò" << endl;
         }
         else {
-            cout << "â†‘â†“: ì´ë™, Enter: ì„ íƒ, ESC: ì·¨ì†Œ" << endl;
+            cout << "¡è¡é: ÀÌµ¿, Enter: ¼±ÅÃ, ESC: Ãë¼Ò" << endl;
         }
 
         int key = _getch();
         if (key == 224) {
             key = _getch();
             if (key == KEY_UP) {
-                // í˜„ì¬ í˜ì´ì§€ ì²« í•­ëª©ë³´ë‹¤ ìœ„ë¡œëŠ” ì´ë™ ì•ˆ í•¨
+                // ÇöÀç ÆäÀÌÁö Ã¹ Ç×¸ñº¸´Ù À§·Î´Â ÀÌµ¿ ¾È ÇÔ
                 if (focus > startIdx) focus--;
             }
             else if (key == KEY_DOWN) {
-                // í˜„ì¬ í˜ì´ì§€ ë§ˆì§€ë§‰ í•­ëª©ë³´ë‹¤ ì•„ë˜ë¡œëŠ” ì´ë™ ì•ˆ í•¨
+                // ÇöÀç ÆäÀÌÁö ¸¶Áö¸· Ç×¸ñº¸´Ù ¾Æ·¡·Î´Â ÀÌµ¿ ¾È ÇÔ
                 if (focus < endIdx - 1) focus++;
             }
             else if (key == KEY_LEFT) {
@@ -240,7 +240,7 @@ string SelectSubjectMenu(string title = "í•™ìŠµí•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”") {
             }
         }
         else if (key == KEY_ENTER) {
-            return subjects[focus].second; // ì„ íƒëœ íŒŒì¼ ê²½ë¡œ ë°˜í™˜
+            return subjects[focus].second; // ¼±ÅÃµÈ ÆÄÀÏ °æ·Î ¹İÈ¯
         }
         else if (key == KEY_ESC) {
             return "";
@@ -248,7 +248,7 @@ string SelectSubjectMenu(string title = "í•™ìŠµí•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”") {
     }
 }
 
-// CSV íŒŒì¼ì—ì„œ ë°ì´í„°ë¥¼ ë¡œë“œí•˜ì—¬ í€´ì¦ˆ ë¦¬ìŠ¤íŠ¸ë¥¼ ë§Œë“œëŠ” ê³µí†µ í•¨ìˆ˜
+// CSV ÆÄÀÏ¿¡¼­ µ¥ÀÌÅÍ¸¦ ·ÎµåÇÏ¿© ÄûÁî ¸®½ºÆ®¸¦ ¸¸µå´Â °øÅë ÇÔ¼ö
 vector<Question> LoadQuestionsFromCSV(const string& path) {
     vector<Question> list;
     ifstream file(path);
@@ -256,7 +256,7 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
     if (!file.is_open()) return list;
 
     string line;
-    getline(file, line); // ì²« ì¤„(í—¤ë”) ê±´ë„ˆë›°ê¸°
+    getline(file, line); // Ã¹ ÁÙ(Çì´õ) °Ç³Ê¶Ù±â
 
     while (getline(file, line)) {
         if (line.empty()) continue;
@@ -265,14 +265,14 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
 
         if (fields.size() >= 6) {
             Question q;
-            q.desc = fields[1];      // ë¬¸ì œ ë‚´ìš©
-            q.nameKr = fields[2];    // ì •ë‹µ
-            q.nameEn = fields[3];    // ì˜¤ë‹µ1
-            q.character = fields[4]; // ì˜¤ë‹µ2 (ê¸°ì¡´ ë³€ìˆ˜ ì¬í™œìš©)
-            q.keyword = fields[5];   // ì˜¤ë‹µ3 (ê¸°ì¡´ ë³€ìˆ˜ ì¬í™œìš©)
+            q.desc = fields[1];      // ¹®Á¦ ³»¿ë
+            q.nameKr = fields[2];    // Á¤´ä
+            q.nameEn = fields[3];    // ¿À´ä1
+            q.character = fields[4]; // ¿À´ä2 (±âÁ¸ º¯¼ö ÀçÈ°¿ë)
+            q.keyword = fields[5];   // ¿À´ä3 (±âÁ¸ º¯¼ö ÀçÈ°¿ë)
             q.level = (fields.size() > 6) ? stoi(fields[6]) : 0;
             q.commentary = (fields.size() > 7) ? fields[7] : "";
-            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // ê²€ìƒ‰ìš© í‚¤ì›Œë“œ
+            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // °Ë»ö¿ë Å°¿öµå
             list.push_back(q);
         }
     }
@@ -280,46 +280,46 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
     return list;
 }
 
-// [ìœ ì§€ë¨] ì„¸ë¯¸ì½œë¡  ì¤„ë°”ê¿ˆ ê¸°ëŠ¥ ì œê±° (ì›ë˜ëŒ€ë¡œ ë³µêµ¬)
+// [À¯ÁöµÊ] ¼¼¹ÌÄİ·Ğ ÁÙ¹Ù²Ş ±â´É Á¦°Å (¿ø·¡´ë·Î º¹±¸)
 void ShowQuestionDetail(const Question& Question)
 {
     screenClear();
-    cout << "=== ë¬¸ì œ ì •ë³´ ===" << endl;
-    cout << "ë¬¸ì œ: " << Question.desc << endl;
-    cout << "ì •ë‹µ: " << Question.nameKr << endl;
+    cout << "=== ¹®Á¦ Á¤º¸ ===" << endl;
+    cout << "¹®Á¦: " << Question.desc << endl;
+    cout << "Á¤´ä: " << Question.nameKr << endl;
     _getch();
 }
 
-// [ìˆ˜ì •ë¨] ê²€ìƒ‰ ê¸°ì¤€ ì„ íƒì„ ìƒí•˜ ë°©í–¥í‚¤ ë©”ë‰´ ë°©ì‹ìœ¼ë¡œ ë³€ê²½
+// [¼öÁ¤µÊ] °Ë»ö ±âÁØ ¼±ÅÃÀ» »óÇÏ ¹æÇâÅ° ¸Ş´º ¹æ½ÄÀ¸·Î º¯°æ
 void SearchLogic(const vector<Question>& targetQuestions, string typeName)
 {
     while (true)
     {
-        // 1. ê²€ìƒ‰ ê¸°ì¤€ ì„ íƒ ë©”ë‰´ (ìƒí•˜ ì´ë™)
-        int focus = 1; // 1: ê³¼ëª©, 2: í‚¤ì›Œë“œ
-        int criteria = 0; // ì„ íƒëœ ê²€ìƒ‰ ê¸°ì¤€
+        // 1. °Ë»ö ±âÁØ ¼±ÅÃ ¸Ş´º (»óÇÏ ÀÌµ¿)
+        int focus = 1; // 1: °ú¸ñ, 2: Å°¿öµå
+        int criteria = 0; // ¼±ÅÃµÈ °Ë»ö ±âÁØ
 
-        // ê²€ìƒ‰ ê¸°ì¤€ í…ìŠ¤íŠ¸ ë°°ì—´ (ì¶œë ¥ìš©)
-        string criteriaNames[2] = { "ê³¼ëª©", "í‚¤ì›Œë“œ" };
+        // °Ë»ö ±âÁØ ÅØ½ºÆ® ¹è¿­ (Ãâ·Â¿ë)
+        string criteriaNames[2] = { "°ú¸ñ", "Å°¿öµå" };
 
         while (true)
         {
             screenClear();
-            cout << "=== " << typeName << " ë¬¸ì œ ê²€ìƒ‰ ===" << endl;
-            cout << "ê²€ìƒ‰ ê¸°ì¤€ì„ ì„ íƒí•˜ì„¸ìš”." << endl;
+            cout << "=== " << typeName << " ¹®Á¦ °Ë»ö ===" << endl;
+            cout << "°Ë»ö ±âÁØÀ» ¼±ÅÃÇÏ¼¼¿ä." << endl;
             cout << "--------------------------------" << endl;
 
-            if (focus == 1) cout << "> 1. ê³¼ëª©" << endl;
-            else            cout << "  1. ê³¼ëª©" << endl;
+            if (focus == 1) cout << "> 1. °ú¸ñ" << endl;
+            else            cout << "  1. °ú¸ñ" << endl;
 
-            if (focus == 2) cout << "> 2. í‚¤ì›Œë“œ" << endl;
-            else            cout << "  2. í‚¤ì›Œë“œ" << endl;
+            if (focus == 2) cout << "> 2. Å°¿öµå" << endl;
+            else            cout << "  2. Å°¿öµå" << endl;
 
             cout << "--------------------------------" << endl;
-            cout << "â†‘â†“: ì´ë™, Enter: ì„ íƒ, ESC: ë’¤ë¡œ ê°€ê¸°" << endl;
+            cout << "¡è¡é: ÀÌµ¿, Enter: ¼±ÅÃ, ESC: µÚ·Î °¡±â" << endl;
 
             int key = _getch();
-            if (key == 224) // í™”ì‚´í‘œ í‚¤ ì²˜ë¦¬
+            if (key == 224) // È­»ìÇ¥ Å° Ã³¸®
             {
                 key = _getch();
                 if (key == KEY_UP)
@@ -336,32 +336,32 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
             else if (key == KEY_ENTER)
             {
                 criteria = focus;
-                break; // ì„ íƒ ì™„ë£Œ
+                break; // ¼±ÅÃ ¿Ï·á
             }
             else if (key == KEY_ESC)
             {
-                return; // í•¨ìˆ˜ ì¢…ë£Œ (ë’¤ë¡œ ê°€ê¸°)
+                return; // ÇÔ¼ö Á¾·á (µÚ·Î °¡±â)
             }
         }
 
-        // 2. ê²€ìƒ‰ì–´ ì…ë ¥
+        // 2. °Ë»ö¾î ÀÔ·Â
         string query;
         screenClear();
-        cout << "=== " << typeName << " ë¬¸ì œ ê²€ìƒ‰ ===" << endl;
-        // ì„ íƒí•œ ê¸°ì¤€ì„ í™”ë©´ì— í‘œì‹œ
-        cout << "[ê²€ìƒ‰ ê¸°ì¤€: " << criteriaNames[criteria - 1] << "]" << endl;
+        cout << "=== " << typeName << " ¹®Á¦ °Ë»ö ===" << endl;
+        // ¼±ÅÃÇÑ ±âÁØÀ» È­¸é¿¡ Ç¥½Ã
+        cout << "[°Ë»ö ±âÁØ: " << criteriaNames[criteria - 1] << "]" << endl;
 
-        cout << "\nê²€ìƒ‰ì–´ë¥¼ ì…ë ¥í•˜ì„¸ìš”: ";
+        cout << "\n°Ë»ö¾î¸¦ ÀÔ·ÂÇÏ¼¼¿ä: ";
         getline(cin, query);
 
         if (query.empty()) continue;
 
-        // 3. ê²€ìƒ‰ ê²°ê³¼ ìˆ˜ì§‘ (results ë²¡í„°ëŠ” ì´ì „ê³¼ ë™ì¼)
+        // 3. °Ë»ö °á°ú ¼öÁı (results º¤ÅÍ´Â ÀÌÀü°ú µ¿ÀÏ)
         vector<Question> results;
         for (const auto& Question : targetQuestions)
         {
             bool isFound = false;
-            // criteria ë³€ìˆ˜(1:ì´ë¦„, 2:ìºë¦­í„°, 3:í‚¤ì›Œë“œ)ë¥¼ ì‚¬ìš©í•˜ì—¬ ê²€ìƒ‰
+            // criteria º¯¼ö(1:ÀÌ¸§, 2:Ä³¸¯ÅÍ, 3:Å°¿öµå)¸¦ »ç¿ëÇÏ¿© °Ë»ö
             if (criteria == 1 && Question.nameKr.find(query) != string::npos) isFound = true;
             else if (criteria == 2 && Question.keyword.find(query) != string::npos) isFound = true;
 
@@ -370,13 +370,13 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
 
         if (results.empty())
         {
-            cout << "\nê²€ìƒ‰ ê²°ê³¼ê°€ ì—†ìŠµë‹ˆë‹¤." << endl;
-            cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ëŒì•„ê°‘ë‹ˆë‹¤.";
+            cout << "\n°Ë»ö °á°ú°¡ ¾ø½À´Ï´Ù." << endl;
+            cout << "¾Æ¹« Å°³ª ´©¸£¸é µ¹¾Æ°©´Ï´Ù.";
             _getch();
             continue;
         }
 
-        // 4. ê²°ê³¼ í™”ë©´ ë£¨í”„ (í˜ì´ì§€ ë° ì»¤ì„œ ê´€ë¦¬)
+        // 4. °á°ú È­¸é ·çÇÁ (ÆäÀÌÁö ¹× Ä¿¼­ °ü¸®)
         int currentPage = 1;
         int itemsPerPage = 10;
         int totalPages = (results.size() + itemsPerPage - 1) / itemsPerPage;
@@ -387,9 +387,9 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
         {
             screenClear();
 
-            // [ìˆ˜ì •ë¨] í—¤ë”ì— ê²€ìƒ‰ ê¸°ì¤€ í¬í•¨
-            // ì˜ˆ: ë‹¨ì–´ : ë¬¸ì œ ì´ë¦„ [ëˆˆì†ì„]
-            cout << "ë‹¨ì–´ : " << criteriaNames[criteria - 1] << " [" << query << "]" << endl;
+            // [¼öÁ¤µÊ] Çì´õ¿¡ °Ë»ö ±âÁØ Æ÷ÇÔ
+            // ¿¹: ´Ü¾î : ¹®Á¦ ÀÌ¸§ [´«¼ÓÀÓ]
+            cout << "´Ü¾î : " << criteriaNames[criteria - 1] << " [" << query << "]" << endl;
             cout << "--------------------------------" << endl;
 
             int startIndex = (currentPage - 1) * itemsPerPage;
@@ -415,9 +415,9 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
             }
 
             cout << "--------------------------------" << endl;
-            cout << "      " << currentPage << " / " << totalPages << " í˜ì´ì§€" << endl;
+            cout << "      " << currentPage << " / " << totalPages << " ÆäÀÌÁö" << endl;
             cout << "--------------------------------" << endl;
-            cout << "â†‘â†“:ì´ë™  Enter:ìƒì„¸ì •ë³´  â†â†’:í˜ì´ì§€  ESC:ì¢…ë£Œ" << endl;
+            cout << "¡è¡é:ÀÌµ¿  Enter:»ó¼¼Á¤º¸  ¡ç¡æ:ÆäÀÌÁö  ESC:Á¾·á" << endl;
 
             int navKey = _getch();
 
@@ -470,38 +470,38 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
 
 void PracticeQuestionSearch()
 {
-    // ê³¼ëª© ì„ íƒ í™”ë©´ í‘œì‹œ
-    string selectedFile = SelectSubjectMenu("ê²€ìƒ‰í•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”");
+    // °ú¸ñ ¼±ÅÃ È­¸é Ç¥½Ã
+    string selectedFile = SelectSubjectMenu("°Ë»öÇÒ °ú¸ñÀ» ¼±ÅÃÇÏ¼¼¿ä");
     if (selectedFile.empty()) return;
 
-    // ì„ íƒëœ CSV íŒŒì¼ì—ì„œ ë¬¸ì œ ë¡œë“œ
+    // ¼±ÅÃµÈ CSV ÆÄÀÏ¿¡¼­ ¹®Á¦ ·Îµå
     vector<Question> questions = LoadQuestionsFromCSV(selectedFile);
     if (questions.empty()) {
         screenClear();
-        cout << "ë¬¸ì œ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤." << endl;
-        cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆŒëŸ¬ì£¼ì„¸ìš”..." << endl;
+        cout << "¹®Á¦ µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù." << endl;
+        cout << "¾Æ¹« Å°³ª ´­·¯ÁÖ¼¼¿ä..." << endl;
         _getch();
         return;
     }
 
-    // ê³¼ëª©ëª… ì¶”ì¶œ (íŒŒì¼ ê²½ë¡œì—ì„œ íŒŒì¼ëª…ë§Œ)
+    // °ú¸ñ¸í ÃßÃâ (ÆÄÀÏ °æ·Î¿¡¼­ ÆÄÀÏ¸í¸¸)
     string subjectName = fs::path(selectedFile).stem().string();
 
-    // ===== ì •ë ¬/ê²€ìƒ‰ ìƒíƒœ ë³€ìˆ˜ =====
-    int sortMode = 0;          // 0:ë²ˆí˜¸â†‘, 1:ë²ˆí˜¸â†“, 2:ë ˆë²¨â†‘, 3:ë ˆë²¨â†“
-    string searchKeyword = ""; // ë¹ˆ ë¬¸ìì—´ì´ë©´ ê²€ìƒ‰ ì ìš© ì•ˆ í•¨
-    int focus = 0;             // í˜„ì¬ ì»¤ì„œê°€ ê°€ë¦¬í‚¤ëŠ” í‘œì‹œ ì¸ë±ìŠ¤ (displayIdx ê¸°ì¤€)
+    // ===== Á¤·Ä/°Ë»ö »óÅÂ º¯¼ö =====
+    int sortMode = 0;          // 0:¹øÈ£¡è, 1:¹øÈ£¡é, 2:·¹º§¡è, 3:·¹º§¡é
+    string searchKeyword = ""; // ºó ¹®ÀÚ¿­ÀÌ¸é °Ë»ö Àû¿ë ¾È ÇÔ
+    int focus = 0;             // ÇöÀç Ä¿¼­°¡ °¡¸®Å°´Â Ç¥½Ã ÀÎµ¦½º (displayIdx ±âÁØ)
     int itemsPerPage = 10;
 
-    // ì •ë ¬ ëª¨ë“œ ë¼ë²¨ (íƒ­ í‘œì‹œì— ì‚¬ìš©)
-    const string sortLabels[4] = { "ë²ˆí˜¸â†‘", "ë²ˆí˜¸â†“", "ë‚œì´ë„â†‘", "ë‚œì´ë„â†“" };
+    // Á¤·Ä ¸ğµå ¶óº§ (ÅÇ Ç¥½Ã¿¡ »ç¿ë)
+    const string sortLabels[4] = { "¹øÈ£¡è", "¹øÈ£¡é", "³­ÀÌµµ¡è", "³­ÀÌµµ¡é" };
 
     while (true) {
-        // ë§¤ í”„ë ˆì„ ì •ë ¬/ê²€ìƒ‰ ê²°ê³¼ ì¬ê³„ì‚°
+        // ¸Å ÇÁ·¹ÀÓ Á¤·Ä/°Ë»ö °á°ú Àç°è»ê
         vector<int> displayIdx = BuildDisplayIndex(questions, sortMode, ToLowerCopy(searchKeyword));
         int total = (int)displayIdx.size();
 
-        // focus ë²”ìœ„ ë³´ì • (ê²€ìƒ‰ í›„ ê²°ê³¼ê°€ ì¤„ì–´ë“  ê²½ìš° ë“±)
+        // focus ¹üÀ§ º¸Á¤ (°Ë»ö ÈÄ °á°ú°¡ ÁÙ¾îµç °æ¿ì µî)
         if (focus >= total) focus = max(0, total - 1);
         if (focus < 0) focus = 0;
 
@@ -511,59 +511,59 @@ void PracticeQuestionSearch()
         int endIdx = min(startIdx + itemsPerPage, total);
 
         screenClear();
-        cout << "=== " << subjectName << " ë¬¸ì œ ëª©ë¡ ===" << endl;
+        cout << "=== " << subjectName << " ¹®Á¦ ¸ñ·Ï ===" << endl;
 
-        // í—¤ë”: "ë²ˆí˜¸"(4ì»¬ëŸ¼) + 4ê³µë°± + "ë‚œì´ë„"(6ì»¬ëŸ¼) + 4ê³µë°± + "í‚¤ì›Œë“œ"(6ì»¬ëŸ¼)
-        // ë°ì´í„° ì»¬ëŸ¼ê³¼ ìœ„ì¹˜ë¥¼ ë§ì¶”ê¸° ìœ„í•´ í•œê¸€ í­(2ì»¬ëŸ¼)ì„ ê³ ë ¤í•´ ë°°ì¹˜
-        cout << "  ë²ˆí˜¸    ë‚œì´ë„    í‚¤ì›Œë“œ" << endl;
+        // Çì´õ: "¹øÈ£"(4ÄÃ·³) + 4°ø¹é + "³­ÀÌµµ"(6ÄÃ·³) + 4°ø¹é + "Å°¿öµå"(6ÄÃ·³)
+        // µ¥ÀÌÅÍ ÄÃ·³°ú À§Ä¡¸¦ ¸ÂÃß±â À§ÇØ ÇÑ±Û Æø(2ÄÃ·³)À» °í·ÁÇØ ¹èÄ¡
+        cout << "  ¹øÈ£    ³­ÀÌµµ    Å°¿öµå" << endl;
         cout << "----------------------------------------" << endl;
 
         if (total == 0) {
-            // ê²€ìƒ‰ ê²°ê³¼ê°€ 0ê°œì¼ ë•Œ ì•ˆë‚´ (ëª©ë¡ ì˜ì—­ ì±„ì›Œì£¼ê¸°)
-            cout << "  (ê²€ìƒ‰ ê²°ê³¼ê°€ ì—†ìŠµë‹ˆë‹¤)" << endl;
+            // °Ë»ö °á°ú°¡ 0°³ÀÏ ¶§ ¾È³» (¸ñ·Ï ¿µ¿ª Ã¤¿öÁÖ±â)
+            cout << "  (°Ë»ö °á°ú°¡ ¾ø½À´Ï´Ù)" << endl;
             for (int blank = 1; blank < itemsPerPage; blank++) cout << endl;
         }
         else {
             for (int i = startIdx; i < endIdx; i++) {
-                int origIdx = displayIdx[i];           // ì›ë³¸ ë¬¸ì œ ì¸ë±ìŠ¤
+                int origIdx = displayIdx[i];           // ¿øº» ¹®Á¦ ÀÎµ¦½º
                 const Question& q = questions[origIdx];
                 string kw = q.searchKeyword.empty() ? "-" : q.searchKeyword;
                 char focusChar = (i == focus) ? '>' : ' ';
-                // ë²ˆí˜¸ëŠ” ì›ë³¸ ë¬¸ì œ ë²ˆí˜¸(ì›ë³¸ ì¸ë±ìŠ¤ + 1)ë¥¼ í‘œì‹œ
-                // â†’ ì •ë ¬ ë°©í–¥ì— ë”°ë¼ ë²ˆí˜¸ ìì²´ê°€ ìì—°ìŠ¤ëŸ½ê²Œ 1â†’N ë˜ëŠ” Nâ†’1ë¡œ ë‚˜ì˜´
-                // setw(2)ë¡œ '.' ìœ„ì¹˜ë¥¼ ë™ì¼ ì»¬ëŸ¼ì— ë§ì¶¤ (ì˜ˆ: " 1.", "10.")
+                // ¹øÈ£´Â ¿øº» ¹®Á¦ ¹øÈ£(¿øº» ÀÎµ¦½º + 1)¸¦ Ç¥½Ã
+                // ¡æ Á¤·Ä ¹æÇâ¿¡ µû¶ó ¹øÈ£ ÀÚÃ¼°¡ ÀÚ¿¬½º·´°Ô 1¡æN ¶Ç´Â N¡æ1·Î ³ª¿È
+                // setw(2)·Î '.' À§Ä¡¸¦ µ¿ÀÏ ÄÃ·³¿¡ ¸ÂÃã (¿¹: " 1.", "10.")
                 cout << focusChar << ' '
                     << setw(2) << (origIdx + 1) << ".     "
                     << "Lv." << q.level << "      "
                     << kw << endl;
             }
-            // ë§ˆì§€ë§‰ í˜ì´ì§€ê°€ itemsPerPageë³´ë‹¤ ì ìœ¼ë©´ ë¹ˆ ì¤„ë¡œ ì±„ì›Œ ë ˆì´ì•„ì›ƒ ìœ ì§€
+            // ¸¶Áö¸· ÆäÀÌÁö°¡ itemsPerPageº¸´Ù ÀûÀ¸¸é ºó ÁÙ·Î Ã¤¿ö ·¹ÀÌ¾Æ¿ô À¯Áö
             for (int blank = endIdx - startIdx; blank < itemsPerPage; blank++) cout << endl;
         }
 
         cout << "----------------------------------------" << endl;
-        cout << "        " << (currentPage + 1) << " / " << totalPages << " í˜ì´ì§€" << endl;
+        cout << "        " << (currentPage + 1) << " / " << totalPages << " ÆäÀÌÁö" << endl;
         cout << "----------------------------------------" << endl;
 
-        // ===== ì •ë ¬ íƒ­(í† ê¸€ë°”) ì¶œë ¥ - í˜ì´ì§€ í‘œì‹œ ì•„ë˜ë¡œ ì´ë™ =====
-        // í™œì„± íƒ­ì€ [ ]ë¡œ, ë¹„í™œì„± íƒ­ì€ ê³µë°± 2ì¹¸ìœ¼ë¡œ ê°ì‹¸ ë™ì¼ í­ ìœ ì§€
+        // ===== Á¤·Ä ÅÇ(Åä±Û¹Ù) Ãâ·Â - ÆäÀÌÁö Ç¥½Ã ¾Æ·¡·Î ÀÌµ¿ =====
+        // È°¼º ÅÇÀº [ ]·Î, ºñÈ°¼º ÅÇÀº °ø¹é 2Ä­À¸·Î °¨½Î µ¿ÀÏ Æø À¯Áö
         for (int t = 0; t < 4; t++) {
             if (sortMode == t) cout << "[" << sortLabels[t] << "]";
             else               cout << " " << sortLabels[t] << " ";
             if (t < 3) cout << " ";
         }
-        // ìš°ì¸¡: í˜„ì¬ í‚¤ì›Œë“œ ê²€ìƒ‰ ìƒíƒœ í‘œì‹œ
-        cout << "    í‚¤ì›Œë“œ ê²€ìƒ‰: ";
+        // ¿ìÃø: ÇöÀç Å°¿öµå °Ë»ö »óÅÂ Ç¥½Ã
+        cout << "    Å°¿öµå °Ë»ö: ";
         if (searchKeyword.empty()) cout << "-";
         else                       cout << "\"" << searchKeyword << "\"";
         cout << endl;
 
         cout << "----------------------------------------" << endl;
-        cout << "â†‘â†“:ì´ë™  â†â†’:í˜ì´ì§€  Tab:ì •ë ¬ë³€ê²½  F:í‚¤ì›Œë“œê²€ìƒ‰  Enter:ì„ íƒ  ESC:ë’¤ë¡œ" << endl;
+        cout << "¡è¡é:ÀÌµ¿  ¡ç¡æ:ÆäÀÌÁö  Tab:Á¤·Äº¯°æ  F:Å°¿öµå°Ë»ö  Enter:¼±ÅÃ  ESC:µÚ·Î" << endl;
 
         int key = _getch();
         if (key == 224) {
-            // í™”ì‚´í‘œ í‚¤ (í™•ì¥í‚¤)
+            // È­»ìÇ¥ Å° (È®ÀåÅ°)
             key = _getch();
             if (key == KEY_UP) {
                 if (total > 0 && focus > startIdx) focus--;
@@ -579,25 +579,25 @@ void PracticeQuestionSearch()
             }
         }
         else if (key == KEY_TAB) {
-            // ì •ë ¬ ëª¨ë“œ ìˆœí™˜: 0 -> 1 -> 2 -> 3 -> 0
+            // Á¤·Ä ¸ğµå ¼øÈ¯: 0 -> 1 -> 2 -> 3 -> 0
             sortMode = (sortMode + 1) % 4;
-            focus = 0; // ì •ë ¬ ë°”ë€Œë©´ ì²« í•­ëª©ìœ¼ë¡œ
+            focus = 0; // Á¤·Ä ¹Ù²î¸é Ã¹ Ç×¸ñÀ¸·Î
         }
         else if (key == 'f' || key == 'F') {
-            // ê²€ìƒ‰ í™”ë©´ ì§„ì…
+            // °Ë»ö È­¸é ÁøÀÔ
             PromptSearchKeyword(searchKeyword);
-            focus = 0; // ê²€ìƒ‰ ì ìš© í›„ ì²« í•­ëª©ìœ¼ë¡œ
+            focus = 0; // °Ë»ö Àû¿ë ÈÄ Ã¹ Ç×¸ñÀ¸·Î
         }
         else if (key == KEY_ENTER) {
-            if (total == 0) continue; // ê²°ê³¼ ì—†ìœ¼ë©´ ë¬´ì‹œ
-            // ì¶”í›„ ìˆ˜ì • ì˜ˆì • - ë¬¸ì œ ìƒì„¸ ë³´ê¸°
-            // í˜„ì¬ëŠ” ì„ íƒëœ ì›ë³¸ ì¸ë±ìŠ¤ ì •ë³´ë§Œ ì•Œë¦¼ (ë””ë²„ê¹…ìš©)
+            if (total == 0) continue; // °á°ú ¾øÀ¸¸é ¹«½Ã
+            // ÃßÈÄ ¼öÁ¤ ¿¹Á¤ - ¹®Á¦ »ó¼¼ º¸±â
+            // ÇöÀç´Â ¼±ÅÃµÈ ¿øº» ÀÎµ¦½º Á¤º¸¸¸ ¾Ë¸² (µğ¹ö±ë¿ë)
             screenClear();
             const Question& selected = questions[displayIdx[focus]];
-            cout << "ì„ íƒëœ ë¬¸ì œ: Lv." << selected.level
-                << "  í‚¤ì›Œë“œ: " << (selected.searchKeyword.empty() ? "-" : selected.searchKeyword) << endl;
-            cout << "(ìƒì„¸ ë³´ê¸° ê¸°ëŠ¥ì€ ì¶”í›„ ìˆ˜ì • ì˜ˆì •)" << endl;
-            cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆŒëŸ¬ì£¼ì„¸ìš”..." << endl;
+            cout << "¼±ÅÃµÈ ¹®Á¦: Lv." << selected.level
+                << "  Å°¿öµå: " << (selected.searchKeyword.empty() ? "-" : selected.searchKeyword) << endl;
+            cout << "(»ó¼¼ º¸±â ±â´ÉÀº ÃßÈÄ ¼öÁ¤ ¿¹Á¤)" << endl;
+            cout << "¾Æ¹« Å°³ª ´­·¯ÁÖ¼¼¿ä..." << endl;
             _getch();
         }
         else if (key == KEY_ESC) {
@@ -608,61 +608,61 @@ void PracticeQuestionSearch()
 
 void ExamQuestionSearch()
 {
-    SearchLogic(ExamQuestions, "ì‹œí—˜ëª¨ë“œ");
+    SearchLogic(ExamQuestions, "½ÃÇè¸ğµå");
 }
 
-// ì¶”í›„ ìˆ˜ì • ì˜ˆì •
+// ÃßÈÄ ¼öÁ¤ ¿¹Á¤
 void PracticeQuestionMake()
 {
     screenClear();
-    cout << "ì¶”í›„ ìˆ˜ì • ì˜ˆì •ì…ë‹ˆë‹¤." << endl;
-    cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆŒëŸ¬ì£¼ì„¸ìš”..." << endl;
+    cout << "ÃßÈÄ ¼öÁ¤ ¿¹Á¤ÀÔ´Ï´Ù." << endl;
+    cout << "¾Æ¹« Å°³ª ´­·¯ÁÖ¼¼¿ä..." << endl;
     _getch();
 }
 
-// [ìœ ì§€ë¨] ì…ë ¥ ì½”ë“œ ì¤„ë°”ê¿ˆ ì ìš©
+// [À¯ÁöµÊ] ÀÔ·Â ÄÚµå ÁÙ¹Ù²Ş Àû¿ë
 void ExamQuestionMake()
 {
     screenClear();
-    cout << "=== ì‹œí—˜ëª¨ë“œ ë¬¸ì œ ì œì‘ ===" << endl;
+    cout << "=== ½ÃÇè¸ğµå ¹®Á¦ Á¦ÀÛ ===" << endl;
     Question newQuestion;
 
-    cout << "ë¬¸ì œ ì´ë¦„(í•œê¸€) ì…ë ¥: ";
+    cout << "¹®Á¦ ÀÌ¸§(ÇÑ±Û) ÀÔ·Â: ";
     getline(cin, newQuestion.nameKr);
 
-    cout << "ë¬¸ì œ ì´ë¦„(ì˜ë¬¸) ì…ë ¥: ";
+    cout << "¹®Á¦ ÀÌ¸§(¿µ¹®) ÀÔ·Â: ";
     getline(cin, newQuestion.nameEn);
 
-    cout << "ì „ìŠ¹ ìºë¦­í„° ì…ë ¥: ";
+    cout << "Àü½Â Ä³¸¯ÅÍ ÀÔ·Â: ";
     getline(cin, newQuestion.character);
 
-    cout << "ë¬¸ì œ ì„¤ëª… ì…ë ¥: ";
+    cout << "¹®Á¦ ¼³¸í ÀÔ·Â: ";
     getline(cin, newQuestion.desc);
 
-    cout << "í‚¤ì›Œë“œ ì…ë ¥: ";
+    cout << "Å°¿öµå ÀÔ·Â: ";
     getline(cin, newQuestion.keyword);
 
-    cout << "\nì €ì¥í•˜ì‹œê² ìŠµë‹ˆê¹Œ? (y/n): ";
+    cout << "\nÀúÀåÇÏ½Ã°Ú½À´Ï±î? (y/n): ";
     char confirm = _getch();
     if (confirm == 'y' || confirm == 'Y') {
         AddExamQuestion(newQuestion);
-        cout << "\nì„±ê³µì ìœ¼ë¡œ ì¶”ê°€ë˜ì—ˆìŠµë‹ˆë‹¤! ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ëŒì•„ê°‘ë‹ˆë‹¤." << endl;
+        cout << "\n¼º°øÀûÀ¸·Î Ãß°¡µÇ¾ú½À´Ï´Ù! ¾Æ¹« Å°³ª ´©¸£¸é µ¹¾Æ°©´Ï´Ù." << endl;
     }
     else {
-        cout << "\nì·¨ì†Œë˜ì—ˆìŠµë‹ˆë‹¤." << endl;
+        cout << "\nÃë¼ÒµÇ¾ú½À´Ï´Ù." << endl;
     }
     _getch();
 }
 
-// PracticeQuestionSolveì™€ ExamQuestionSolveì—ì„œ ê³µí†µìœ¼ë¡œ ì‚¬ìš©í•˜ëŠ”
-// 4ì§€ì„ ë‹¤ ë³´ê¸° êµ¬ì„± í•¨ìˆ˜ (ì¤‘ë³µ ì½”ë“œ ì œê±° ëª©ì )
+// PracticeQuestionSolve¿Í ExamQuestionSolve¿¡¼­ °øÅëÀ¸·Î »ç¿ëÇÏ´Â
+// 4Áö¼±´Ù º¸±â ±¸¼º ÇÔ¼ö (Áßº¹ ÄÚµå Á¦°Å ¸ñÀû)
 void BuildChoices(const vector<Question>& pool, int questionIndex,
     vector<string>& choices, int& answerSlot)
 {
     const Question& cur = pool[questionIndex];
 
-    // ì˜¤ë‹µ 3ê°œ ìˆ˜ì§‘
-    // wrongChoicesì— ê°’ì´ ìˆìœ¼ë©´ ì‚¬ìš©, ì—†ìœ¼ë©´ ë‹¤ë¥¸ ë¬¸ì œ ì •ë‹µìœ¼ë¡œ ì„ì‹œ ëŒ€ì²´
+    // ¿À´ä 3°³ ¼öÁı
+    // wrongChoices¿¡ °ªÀÌ ÀÖÀ¸¸é »ç¿ë, ¾øÀ¸¸é ´Ù¸¥ ¹®Á¦ Á¤´äÀ¸·Î ÀÓ½Ã ´ëÃ¼
     vector<string> wrongPool;
     for (int i = 0; i < 3; i++)
     {
@@ -672,14 +672,14 @@ void BuildChoices(const vector<Question>& pool, int questionIndex,
         }
         else
         {
-            // ìê¸° ìì‹ ì´ ì˜¤ë‹µìœ¼ë¡œ ë½‘íˆì§€ ì•Šë„ë¡ do-whileë¡œ ê±¸ëŸ¬ëƒ„
+            // ÀÚ±â ÀÚ½ÅÀÌ ¿À´äÀ¸·Î »ÌÈ÷Áö ¾Êµµ·Ï do-while·Î °É·¯³¿
             int fallback;
             do { fallback = rand() % (int)pool.size(); } while (fallback == questionIndex);
             wrongPool.push_back(pool[fallback].nameKr);
         }
     }
 
-    // ì •ë‹µì´ í•­ìƒ ê°™ì€ ìœ„ì¹˜ì— ì˜¤ì§€ ì•Šë„ë¡ ìœ„ì¹˜ë¥¼ ëœë¤ìœ¼ë¡œ ê²°ì •
+    // Á¤´äÀÌ Ç×»ó °°Àº À§Ä¡¿¡ ¿ÀÁö ¾Êµµ·Ï À§Ä¡¸¦ ·£´ıÀ¸·Î °áÁ¤
     answerSlot = rand() % 4;
     choices.clear();
     int wrongUsed = 0;
@@ -687,9 +687,9 @@ void BuildChoices(const vector<Question>& pool, int questionIndex,
         choices.push_back(i == answerSlot ? cur.nameKr : wrongPool[wrongUsed++]);
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// ì—°ìŠµë¬¸ì œ í’€ê¸°
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// ¿¬½À¹®Á¦ Ç®±â
+// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
 void PracticeQuestionSolve()
 {
     string selectedFile = SelectSubjectMenu();
@@ -700,31 +700,31 @@ void PracticeQuestionSolve()
 
     vector<Question> quizList;
     string line;
-    getline(file, line); // í—¤ë” ìŠ¤í‚µ
+    getline(file, line); // Çì´õ ½ºÅµ
 
     while (getline(file, line)) {
         if (line.empty()) continue;
         vector<string> fields = ParseCSVLine(line, file);
 
-        if (fields.size() >= 7) { // ìµœì†Œ ë‚œì´ë„ ì¹¸ê¹Œì§€ëŠ” ìˆì–´ì•¼ í•¨
+        if (fields.size() >= 7) { // ÃÖ¼Ò ³­ÀÌµµ Ä­±îÁö´Â ÀÖ¾î¾ß ÇÔ
             Question q;
             q.desc = fields[1];
-            q.nameKr = fields[2];    // ì •ë‹µ (OXì¼ ë•Œ 'O' ë˜ëŠ” 'X')
-            q.nameEn = fields[3];    // ì˜¤ë‹µ (OXì¼ ë•Œ 'X' ë˜ëŠ” 'O')
+            q.nameKr = fields[2];    // Á¤´ä (OXÀÏ ¶§ 'O' ¶Ç´Â 'X')
+            q.nameEn = fields[3];    // ¿À´ä (OXÀÏ ¶§ 'X' ¶Ç´Â 'O')
             q.character = (fields.size() > 4) ? fields[4] : "";
             q.keyword = (fields.size() > 5) ? fields[5] : "";
 
-            // ë‚œì´ë„ ì €ì¥ (ë¬¸ìì—´ "1"ì„ ì •ìˆ˜ 1ë¡œ ë³€í™˜)
+            // ³­ÀÌµµ ÀúÀå (¹®ÀÚ¿­ "1"À» Á¤¼ö 1·Î º¯È¯)
             q.level = stoi(fields[6]);
 
             if (fields.size() >= 8) {
                 q.commentary = fields[7];
             }
             else {
-                // í•´ì„¤ì´ ì—†ìœ¼ë©´ ê¸°ë³¸ ë¬¸êµ¬ ì¶œë ¥
-                q.commentary = "[ ë“±ë¡ëœ í•´ì„¤ì´ ì—†ìŠµë‹ˆë‹¤. ]";
+                // ÇØ¼³ÀÌ ¾øÀ¸¸é ±âº» ¹®±¸ Ãâ·Â
+                q.commentary = "[ µî·ÏµÈ ÇØ¼³ÀÌ ¾ø½À´Ï´Ù. ]";
             }
-            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // ê²€ìƒ‰ìš© í‚¤ì›Œë“œ
+            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // °Ë»ö¿ë Å°¿öµå
             quizList.push_back(q);
         }
     }
@@ -738,12 +738,12 @@ void PracticeQuestionSolve()
 
     int score = 0;
     for (int i = 0; i < (int)quizList.size(); i++) {
-        // ë³´ê¸°ë¥¼ ìƒì„±í•˜ê³  ì„ìŒ
+        // º¸±â¸¦ »ı¼ºÇÏ°í ¼¯À½
         vector<string> options;
         int maxChoices = 0;
 
         if (quizList[i].level == 1) {
-            // Oê°€ ìœ„ë¡œ, Xê°€ ì•„ë˜ë¡œ ê°€ê²Œ ê³ ì •
+            // O°¡ À§·Î, X°¡ ¾Æ·¡·Î °¡°Ô °íÁ¤
             options = { "O", "X" };
             maxChoices = 2;
         }
@@ -755,17 +755,17 @@ void PracticeQuestionSolve()
             maxChoices = 4;
         }
 
-        int focus = 0; // í˜„ì¬ ì–´ë–¤ ë³´ê¸°ë¥¼ ê°€ë¦¬í‚¤ê³  ìˆëŠ”ì§€
+        int focus = 0; // ÇöÀç ¾î¶² º¸±â¸¦ °¡¸®Å°°í ÀÖ´ÂÁö
         bool answered = false;
 
         while (!answered) {
             screenClear();
-            cout << "=== ë¬¸ì œ [" << i + 1 << " / " << quizList.size() << "] ===" << endl;
+            cout << "=== ¹®Á¦ [" << i + 1 << " / " << quizList.size() << "] ===" << endl;
             cout << "----------------------------------------" << endl;
             cout << quizList[i].desc << endl;
             cout << "----------------------------------------" << endl;
 
-            // ë³´ê¸°ë¥¼ ì¶œë ¥í•˜ë©° í˜„ì¬ í¬ì»¤ìŠ¤ ëœ í•­ëª© ì•ì— '>' í‘œì‹œ
+            // º¸±â¸¦ Ãâ·ÂÇÏ¸ç ÇöÀç Æ÷Ä¿½º µÈ Ç×¸ñ ¾Õ¿¡ '>' Ç¥½Ã
             for (int k = 0; k < maxChoices; k++) {
                 if (k == focus) cout << "> " << k + 1 << ". " << options[k] << endl;
                 else {
@@ -774,10 +774,10 @@ void PracticeQuestionSolve()
             }
             
             cout << "----------------------------------------" << endl;
-            cout << "â†‘â†“: ì´ë™  Enter: ê²°ì •  ESC: í•™ìŠµ ì¤‘ë‹¨" << endl;
+            cout << "¡è¡é: ÀÌµ¿  Enter: °áÁ¤  ESC: ÇĞ½À Áß´Ü" << endl;
 
             int input = _getch();
-            if (input == 224) { // ë°©í–¥í‚¤ ì…ë ¥ ì²˜ë¦¬
+            if (input == 224) { // ¹æÇâÅ° ÀÔ·Â Ã³¸®
                 input = _getch();
                 if (input == KEY_UP) {
                     focus = (focus - 1 + maxChoices) % maxChoices;
@@ -788,30 +788,30 @@ void PracticeQuestionSolve()
             }
             else if (input == KEY_ENTER) {
                 answered = true;
-                // Enterë¥¼ ëˆ„ë¥´ë©´ í˜„ì¬ focusì— ìˆëŠ” ë‹µì´ ì •ë‹µì¸ì§€ í™•ì¸
+                // Enter¸¦ ´©¸£¸é ÇöÀç focus¿¡ ÀÖ´Â ´äÀÌ Á¤´äÀÎÁö È®ÀÎ
                 if (options[focus] == quizList[i].nameKr) {
-                    cout << "\n[ ì •ë‹µ ]" << endl;
+                    cout << "\n[ Á¤´ä ]" << endl;
                     score++;
                 }
                 else {
-                    cout << "\n[ ì˜¤ë‹µ ]" << endl;
-                    cout << "ì •ë‹µ: " << quizList[i].nameKr << endl;
+                    cout << "\n[ ¿À´ä ]" << endl;
+                    cout << "Á¤´ä: " << quizList[i].nameKr << endl;
                 }
 
-                cout << "\n [ ë¬¸ì œ í•´ì„¤ ]" << endl;
+                cout << "\n [ ¹®Á¦ ÇØ¼³ ]" << endl;
                 if (!quizList[i].commentary.empty()) {
                     cout << " " << quizList[i].commentary << endl;
                 }
                 else {
-                    cout << "[ ë“±ë¡ëœ í•´ì„¤ì´ ì—†ìŠµë‹ˆë‹¤. ]" << endl;
+                    cout << "[ µî·ÏµÈ ÇØ¼³ÀÌ ¾ø½À´Ï´Ù. ]" << endl;
                 }
                 cout << "----------------------------------------" << endl;
-                cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ë‹¤ìŒ ë¬¸ì œë¡œ ì´ë™í•©ë‹ˆë‹¤.";
+                cout << "¾Æ¹« Å°³ª ´©¸£¸é ´ÙÀ½ ¹®Á¦·Î ÀÌµ¿ÇÕ´Ï´Ù.";
 
-                _getch(); // ê²°ê³¼ í™•ì¸ìš© ëŒ€ê¸°
+                _getch(); // °á°ú È®ÀÎ¿ë ´ë±â
                 answered = true;
             } else if (input == KEY_ESC) {
-                return; // í•™ìŠµ ì¢…ë£Œ
+                return; // ÇĞ½À Á¾·á
             }
         }
     }
@@ -820,11 +820,11 @@ FinalEnd:
     screenClear();
     cout << "==========================================" << endl;
     cout << "                                          " << endl;
-    cout << "             ì—°ìŠµì„ ì™„ë£Œí–ˆìŠµë‹ˆë‹¤!         " << endl;
+    cout << "             ¿¬½ÀÀ» ¿Ï·áÇß½À´Ï´Ù!         " << endl;
     cout << "                                          " << endl;
     cout << "==========================================" << endl;
     cout << endl;
-    cout << "      ESCë¥¼ ëˆ„ë¥´ë©´ ë©”ë‰´ë¡œ ëŒì•„ê°‘ë‹ˆë‹¤.     " << endl;
+    cout << "      ESC¸¦ ´©¸£¸é ¸Ş´º·Î µ¹¾Æ°©´Ï´Ù.     " << endl;
     cout << endl;
     cout << "==========================================" << endl;
 
@@ -834,12 +834,12 @@ FinalEnd:
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// ì‹œí—˜ëª¨ë“œ
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// ½ÃÇè¸ğµå
+// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
 void ExamQuestionSolve()
 {
-    // ê³¼ëª© ì„ íƒ
+    // °ú¸ñ ¼±ÅÃ
     string selectedFile = SelectSubjectMenu();
     if (selectedFile == "") return;
 
@@ -848,29 +848,29 @@ void ExamQuestionSolve()
     if (!file.is_open()) return;
 
     string line;
-    getline(file, line); // í—¤ë” ìŠ¤í‚µ
+    getline(file, line); // Çì´õ ½ºÅµ
 
     while (getline(file, line)) {
         if (line.empty()) continue;
         vector<string> fields = ParseCSVLine(line, file);
 
-        if (fields.size() >= 7) { // ìµœì†Œ ë‚œì´ë„ ì¹¸ê¹Œì§€ëŠ” ìˆì–´ì•¼ í•¨
+        if (fields.size() >= 7) { // ÃÖ¼Ò ³­ÀÌµµ Ä­±îÁö´Â ÀÖ¾î¾ß ÇÔ
             Question q;
             q.desc = fields[1];
-            q.nameKr = fields[2];    // ì •ë‹µ (OXì¼ ë•Œ 'O' ë˜ëŠ” 'X')
-            q.nameEn = fields[3];    // ì˜¤ë‹µ (OXì¼ ë•Œ 'X' ë˜ëŠ” 'O')
+            q.nameKr = fields[2];    // Á¤´ä (OXÀÏ ¶§ 'O' ¶Ç´Â 'X')
+            q.nameEn = fields[3];    // ¿À´ä (OXÀÏ ¶§ 'X' ¶Ç´Â 'O')
             q.character = (fields.size() > 4) ? fields[4] : "";
             q.keyword = (fields.size() > 5) ? fields[5] : "";
 
-            // ë‚œì´ë„ ì €ì¥ (ë¬¸ìì—´ "1"ì„ ì •ìˆ˜ 1ë¡œ ë³€í™˜)
+            // ³­ÀÌµµ ÀúÀå (¹®ÀÚ¿­ "1"À» Á¤¼ö 1·Î º¯È¯)
             q.level = stoi(fields[6]);
 
             if (fields.size() >= 8) q.commentary = fields[7];
             else {
-                // í•´ì„¤ì´ ì—†ìœ¼ë©´ ê¸°ë³¸ ë¬¸êµ¬ ì¶œë ¥
-                q.commentary = "[ ë“±ë¡ëœ í•´ì„¤ì´ ì—†ìŠµë‹ˆë‹¤. ]";
+                // ÇØ¼³ÀÌ ¾øÀ¸¸é ±âº» ¹®±¸ Ãâ·Â
+                q.commentary = "[ µî·ÏµÈ ÇØ¼³ÀÌ ¾ø½À´Ï´Ù. ]";
             }
-            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // ê²€ìƒ‰ìš© í‚¤ì›Œë“œ
+            q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // °Ë»ö¿ë Å°¿öµå
 
             ExamQuestions.push_back(q);
         }
@@ -878,23 +878,23 @@ void ExamQuestionSolve()
     file.close();
 
     if (ExamQuestions.size() < 4) {
-        cout << "\n[ ë¬¸ì œê°€ ë¶€ì¡±í•©ë‹ˆë‹¤. ]";
+        cout << "\n[ ¹®Á¦°¡ ºÎÁ·ÇÕ´Ï´Ù. ]";
         _getch();
         return;
     }
 
-    // ë¬¸ì œ ìˆ˜ ì„¤ì • ë° ì…”í”Œ
+    // ¹®Á¦ ¼ö ¼³Á¤ ¹× ¼ÅÇÃ
     int examCount = 0;
     while (true) {
         screenClear();
-        cout << "=== ì‹œí—˜ ëª¨ë“œ: " << fs::path(selectedFile).stem().string() << " ===" << endl;
-        cout << "í’€ ë¬¸ì œ ìˆ˜ ì…ë ¥ (4 ~ " << ExamQuestions.size() << "): ";
+        cout << "=== ½ÃÇè ¸ğµå: " << fs::path(selectedFile).stem().string() << " ===" << endl;
+        cout << "Ç® ¹®Á¦ ¼ö ÀÔ·Â (4 ~ " << ExamQuestions.size() << "): ";
         string input; getline(cin, input);
         try {
             examCount = stoi(input);
             if (examCount >= 4 && examCount <= (int)ExamQuestions.size()) break;
         } catch (...) {}
-        cout << "ë²”ìœ„ ë‚´ ìˆ«ìë¥¼ ì…ë ¥í•˜ì„¸ìš”.";
+        cout << "¹üÀ§ ³» ¼ıÀÚ¸¦ ÀÔ·ÂÇÏ¼¼¿ä.";
         _getch();
     }
 
@@ -925,13 +925,13 @@ void ExamQuestionSolve()
 
         while (!answered) {
             screenClear();
-            cout << "=== ì‹œí—˜ [" << i + 1 << " / " << examCount << "] ===" << endl;
+            cout << "=== ½ÃÇè [" << i + 1 << " / " << examCount << "] ===" << endl;
             cout << "\n " << ExamQuestions[i].desc << "\n" << endl;
 
             for (int k = 0; k < maxChoices; k++) {
                 cout << (k == focus ? "> " : "  ") << k + 1 << ". " << options[k] << endl;
             }
-            cout << "\nâ†‘â†“: ì´ë™  Enter: ì œì¶œ  ESC: ì¤‘ë‹¨" << endl;
+            cout << "\n¡è¡é: ÀÌµ¿  Enter: Á¦Ãâ  ESC: Áß´Ü" << endl;
 
             int key = _getch();
             if (key == 224) {
@@ -950,7 +950,7 @@ void ExamQuestionSolve()
                 else {
                     wrongRecord.push_back({ i, options[focus] });
                 }
-                answered = true; // ì‹œí—˜ëª¨ë“œëŠ” ì¦‰ì‹œ í•´ì„¤ ì—†ì´ ë‹¤ìŒ ë¬¸ì œë¡œ
+                answered = true; // ½ÃÇè¸ğµå´Â Áï½Ã ÇØ¼³ ¾øÀÌ ´ÙÀ½ ¹®Á¦·Î
             }
             else if (key == KEY_ESC) {
                 return;
@@ -958,19 +958,19 @@ void ExamQuestionSolve()
         }
     }
 
-    // ê²°ê³¼ ë° ì˜¤ë‹µ ë³µìŠµ
+    // °á°ú ¹× ¿À´ä º¹½À
     time_t elapsed = time(nullptr) - startTime;
     screenClear();
-    cout << "=== ì‹œí—˜ ì™„ë£Œ ===" << endl;
-    cout << " ì„±ì : " << score << " / " << examCount << endl;
-    cout << " ì‹œê°„: " << elapsed / 60 << "ë¶„ " << elapsed % 60 << "ì´ˆ" << endl;
+    cout << "=== ½ÃÇè ¿Ï·á ===" << endl;
+    cout << " ¼ºÀû: " << score << " / " << examCount << endl;
+    cout << " ½Ã°£: " << elapsed / 60 << "ºĞ " << elapsed % 60 << "ÃÊ" << endl;
     
     if (wrongRecord.empty()) {
-        cout << "\n ë§Œì ì…ë‹ˆë‹¤.";
+        cout << "\n ¸¸Á¡ÀÔ´Ï´Ù.";
         _getch();
         return;
     }
-    cout << "\nENTER: ì˜¤ë‹µ ë³µìŠµ ì‹œì‘  ESC: ì¢…ë£Œ" << endl;
+    cout << "\nENTER: ¿À´ä º¹½À ½ÃÀÛ  ESC: Á¾·á" << endl;
     if (_getch() == 27) {
         return;
     }
@@ -996,7 +996,7 @@ void ExamQuestionSolve()
 
         while (true) {
             screenClear();
-            cout << "=== ì˜¤ë‹µ ë³µìŠµ (ì‹œí—˜ ë•Œ ì„ íƒ: " << rec.second << ") ===" << endl;
+            cout << "=== ¿À´ä º¹½À (½ÃÇè ¶§ ¼±ÅÃ: " << rec.second << ") ===" << endl;
             cout << "\n " << ExamQuestions[idx].desc << "\n" << endl;
 
             for (int k = 0; k < maxChoices; k++) {
@@ -1010,9 +1010,9 @@ void ExamQuestionSolve()
 
             if (answered) {
                 cout << "\n---------------------------------" << endl;
-                cout << " [í•´ì„¤]\n " << ExamQuestions[idx].commentary << endl;
+                cout << " [ÇØ¼³]\n " << ExamQuestions[idx].commentary << endl;
                 cout << "---------------------------------" << endl;
-                cout << "Enter: ë‹¤ìŒ ë¬¸ì œ  ESC: ì¤‘ë‹¨" << endl;
+                cout << "Enter: ´ÙÀ½ ¹®Á¦  ESC: Áß´Ü" << endl;
                 int k = _getch();
                 if (k == 13) break; else if (k == 27) return;
             }
@@ -1034,19 +1034,19 @@ void ExamQuestionSolve()
         }
     }
 FinalScore:
-    // G. ìµœì¢… ì¢…ë£Œ í™”ë©´
+    // G. ÃÖÁ¾ Á¾·á È­¸é
     screenClear();
     cout << "==========================================" << endl;
     cout << "                                          " << endl;
-    cout << "             ë³µìŠµì„ ì™„ë£Œí–ˆìŠµë‹ˆë‹¤!         " << endl;
+    cout << "             º¹½ÀÀ» ¿Ï·áÇß½À´Ï´Ù!         " << endl;
     cout << "                                          " << endl;
     cout << "==========================================" << endl;
     cout << endl;
-    cout << "      ESCë¥¼ ëˆ„ë¥´ë©´ ë©”ë‰´ë¡œ ëŒì•„ê°‘ë‹ˆë‹¤.     " << endl;
+    cout << "      ESC¸¦ ´©¸£¸é ¸Ş´º·Î µ¹¾Æ°©´Ï´Ù.     " << endl;
     cout << endl;
     cout << "==========================================" << endl;
 
-    // ESC í‚¤ê°€ ì…ë ¥ë  ë•Œê¹Œì§€ ëŒ€ê¸°
+    // ESC Å°°¡ ÀÔ·ÂµÉ ¶§±îÁö ´ë±â
     while (true) {
         int finalKey = _getch();
         if (finalKey == 27) break;
@@ -1091,19 +1091,19 @@ void PrintAttackEffect(int damage)
 {
     cout << endl;
 
-    cout << "       í”Œë ˆì´ì–´ì˜ ê³µê²©!" << endl;
+    cout << "       ÇÃ·¹ÀÌ¾îÀÇ °ø°İ!" << endl;
     cout << "==================================" << endl;
     cout << "            >>> BOOM! >>>         " << endl;
     cout << "==================================" << endl;
 
     cout << endl;
-    cout << "ë³´ìŠ¤ì—ê²Œ " << damage << " ë°ë¯¸ì§€!" << endl;
+    cout << "º¸½º¿¡°Ô " << damage << " µ¥¹ÌÁö!" << endl;
     cout << endl;
 }
 
 void BossMonsterMode()
 {
-    string selectedFile = SelectSubjectMenu("ë³´ìŠ¤ì „ì— ì‚¬ìš©í•  ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”");
+    string selectedFile = SelectSubjectMenu("º¸½ºÀü¿¡ »ç¿ëÇÒ °ú¸ñÀ» ¼±ÅÃÇÏ¼¼¿ä");
     if (selectedFile == "") return;
 
     vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
@@ -1111,8 +1111,8 @@ void BossMonsterMode()
     if (quizList.empty())
     {
         screenClear();
-        cout << "ë¬¸ì œ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤." << endl;
-        cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆŒëŸ¬ì£¼ì„¸ìš”..." << endl;
+        cout << "¹®Á¦ µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù." << endl;
+        cout << "¾Æ¹« Å°³ª ´­·¯ÁÖ¼¼¿ä..." << endl;
         _getch();
         return;
     }
@@ -1142,10 +1142,10 @@ void BossMonsterMode()
 
         screenClear();
 
-        cout << "========== ëª¬ìŠ¤í„° ì²˜ì¹˜ ëª¨ë“œ ==========" << endl;
-        cout << "ë‚¨ì€ ì‹œê°„: " << remainTime << "ì´ˆ" << endl;
-        cout << "ì ìˆ˜: " << score << endl;
-        cout << "ì½¤ë³´: " << combo << endl;
+        cout << "========== ¸ó½ºÅÍ Ã³Ä¡ ¸ğµå ==========" << endl;
+        cout << "³²Àº ½Ã°£: " << remainTime << "ÃÊ" << endl;
+        cout << "Á¡¼ö: " << score << endl;
+        cout << "ÄŞº¸: " << combo << endl;
 
         cout << "Boss HP: [";
         int hpBar = bossHp / 5;
@@ -1158,11 +1158,11 @@ void BossMonsterMode()
         PrintBoss();
 
         cout << "--------------------------------------" << endl;
-        cout << "ë¬¸ì œ [" << i + 1 << " / " << quizList.size() << "]" << endl;
+        cout << "¹®Á¦ [" << i + 1 << " / " << quizList.size() << "]" << endl;
         cout << quizList[i].desc << endl;
         cout << "--------------------------------------" << endl;
 
-        cout << "ì •ë‹µ ì…ë ¥: ";
+        cout << "Á¤´ä ÀÔ·Â: ";
         getline(cin, userAnswer);
 
         if (userAnswer == quizList[i].nameKr)
@@ -1186,19 +1186,19 @@ void BossMonsterMode()
             
             screenClear();
 
-            cout << "========== ëª¬ìŠ¤í„° ì²˜ì¹˜ ëª¨ë“œ ==========" << endl;
-            cout << "[ì •ë‹µ!] ê³µê²© ì„±ê³µ!" << endl;
-            cout << "ë³´ìŠ¤ì—ê²Œ " << damage << " ë°ë¯¸ì§€!" << endl;
+            cout << "========== ¸ó½ºÅÍ Ã³Ä¡ ¸ğµå ==========" << endl;
+            cout << "[Á¤´ä!] °ø°İ ¼º°ø!" << endl;
+            cout << "º¸½º¿¡°Ô " << damage << " µ¥¹ÌÁö!" << endl;
 
             if (combo >= 3)
             {
-                cout << "ì½¤ë³´ ë³´ë„ˆìŠ¤ ë°œë™!" << endl;
+                cout << "ÄŞº¸ º¸³Ê½º ¹ßµ¿!" << endl;
             }
 
             PrintBossDamaged();
 
             cout << endl;
-            cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ë‹¤ìŒ ë¬¸ì œë¡œ ì´ë™í•©ë‹ˆë‹¤..." << endl;
+            cout << "¾Æ¹« Å°³ª ´©¸£¸é ´ÙÀ½ ¹®Á¦·Î ÀÌµ¿ÇÕ´Ï´Ù..." << endl;
             _getch();
         }
         else
@@ -1206,8 +1206,8 @@ void BossMonsterMode()
             combo = 0;
 
             cout << endl;
-            cout << "[ì˜¤ë‹µ] ê³µê²© ì‹¤íŒ¨!" << endl;
-            cout << "ì •ë‹µ: " << quizList[i].nameKr << endl;
+            cout << "[¿À´ä] °ø°İ ½ÇÆĞ!" << endl;
+            cout << "Á¤´ä: " << quizList[i].nameKr << endl;
         }
 
         cout << endl;
@@ -1215,17 +1215,17 @@ void BossMonsterMode()
 
     screenClear();
 
-    cout << "========== ê²Œì„ ê²°ê³¼ ==========" << endl;
+    cout << "========== °ÔÀÓ °á°ú ==========" << endl;
 
     if (bossHp <= 0)
-        cout << "ë³´ìŠ¤ ì²˜ì¹˜ ì„±ê³µ!" << endl;
+        cout << "º¸½º Ã³Ä¡ ¼º°ø!" << endl;
     else
-        cout << "ë³´ìŠ¤ ì²˜ì¹˜ ì‹¤íŒ¨!" << endl;
+        cout << "º¸½º Ã³Ä¡ ½ÇÆĞ!" << endl;
 
-    cout << "ìµœì¢… ì ìˆ˜: " << score << endl;
-    cout << "ë‚¨ì€ ë³´ìŠ¤ HP: " << bossHp << " / " << maxBossHp << endl;
+    cout << "ÃÖÁ¾ Á¡¼ö: " << score << endl;
+    cout << "³²Àº º¸½º HP: " << bossHp << " / " << maxBossHp << endl;
     cout << "===============================" << endl;
-    cout << "ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ë©”ë‰´ë¡œ ëŒì•„ê°‘ë‹ˆë‹¤..." << endl;
+    cout << "¾Æ¹« Å°³ª ´©¸£¸é ¸Ş´º·Î µ¹¾Æ°©´Ï´Ù..." << endl;
 
     _getch();
 }
@@ -1246,12 +1246,12 @@ static void PrintTower(int floor, int lives, int combo, int score)
     }
     cout << "  |____________|\n";
     cout << "\n";
-    cout << "  ëª©ìˆ¨:" << livesStr << "   ì½¤ë³´: x" << combo
-        << "   ì ìˆ˜: " << score << "\n";
+    cout << "  ¸ñ¼û:" << livesStr << "   ÄŞº¸: x" << combo
+        << "   Á¡¼ö: " << score << "\n";
     cout << "-----------------------------------------\n";
 }
 
-// -- ë‚´ë¶€ í—¬í¼: 4ì§€ì„ ë‹¤ ë³´ê¸° ë§Œë“¤ê¸° ------------------------------
+// -- ³»ºÎ ÇïÆÛ: 4Áö¼±´Ù º¸±â ¸¸µé±â ------------------------------
 static void BuildTowerChoices(const vector<Question>& pool, int qIdx,
     vector<string>& choices, int& answerSlot)
 {
@@ -1275,34 +1275,34 @@ static void BuildTowerChoices(const vector<Question>& pool, int qIdx,
         choices.push_back((i == answerSlot) ? cur.nameKr : wrongs[wi++]);
 }
 
-// -- ë‚œì´ë„ ë‹¨ê³„ í…ìŠ¤íŠ¸ -------------------------------------------
+// -- ³­ÀÌµµ ´Ü°è ÅØ½ºÆ® -------------------------------------------
 static string GetDifficultyLabel(int floor)
 {
-    if (floor < 10)  return "[1] ì…ë¬¸";
-    if (floor < 20)  return "[2] ì´ˆê¸‰";
-    if (floor < 30)  return "[3] ì¤‘ê¸‰";
-    if (floor < 40)  return "[4] ê³ ê¸‰";
-    return "[5] ì „ë¬¸ê°€";
+    if (floor < 10)  return "[1] ÀÔ¹®";
+    if (floor < 20)  return "[2] ÃÊ±Ş";
+    if (floor < 30)  return "[3] Áß±Ş";
+    if (floor < 40)  return "[4] °í±Ş";
+    return "[5] Àü¹®°¡";
 }
 
-// -- ë³´ìŠ¤ì¸µ ì—¬ë¶€ --------------------------------------------------
+// -- º¸½ºÃş ¿©ºÎ --------------------------------------------------
 static bool IsBossFloor(int floor)
 {
     return floor > 0 && floor % 10 == 0;
 }
 
-// -- ìµœì¢… ë“±ê¸‰ í…ìŠ¤íŠ¸ ---------------------------------------------
+// -- ÃÖÁ¾ µî±Ş ÅØ½ºÆ® ---------------------------------------------
 static string GetGrade(int floor)
 {
-    if (floor >= 50) return "  [ LEGEND  ] ë‹¹ì‹ ì€ íƒ‘ì˜ ì •ë³µìì…ë‹ˆë‹¤!";
-    if (floor >= 40) return "  [ MASTER  ] ë†€ë¼ìš´ ì‹¤ë ¥ì…ë‹ˆë‹¤!";
-    if (floor >= 30) return "  [ GOLD    ] ë›°ì–´ë‚œ ë„ì „ìì…ë‹ˆë‹¤!";
-    if (floor >= 20) return "  [ SILVER  ] í›Œë¥­í•œ ë„ì „ì´ì—ˆìŠµë‹ˆë‹¤!";
-    if (floor >= 10) return "  [ BRONZE  ] ì¢‹ì€ ì‹œì‘ì´ì—ˆìŠµë‹ˆë‹¤!";
-    return "  [ BEGINNER] ë‹¤ìŒì—” ë” ë†’ì´ ì˜¬ë¼ê°€ ë³´ì„¸ìš”!";
+    if (floor >= 50) return "  [ LEGEND  ] ´ç½ÅÀº Å¾ÀÇ Á¤º¹ÀÚÀÔ´Ï´Ù!";
+    if (floor >= 40) return "  [ MASTER  ] ³î¶ó¿î ½Ç·ÂÀÔ´Ï´Ù!";
+    if (floor >= 30) return "  [ GOLD    ] ¶Ù¾î³­ µµÀüÀÚÀÔ´Ï´Ù!";
+    if (floor >= 20) return "  [ SILVER  ] ÈÇ¸¢ÇÑ µµÀüÀÌ¾ú½À´Ï´Ù!";
+    if (floor >= 10) return "  [ BRONZE  ] ÁÁÀº ½ÃÀÛÀÌ¾ú½À´Ï´Ù!";
+    return "  [ BEGINNER] ´ÙÀ½¿£ ´õ ³ôÀÌ ¿Ã¶ó°¡ º¸¼¼¿ä!";
 }
 
-// -- ê³µí†µ í€´ì¦ˆ í™”ë©´ ì¶œë ¥ ------------------------------------------
+// -- °øÅë ÄûÁî È­¸é Ãâ·Â ------------------------------------------
 static void PrintQuizScreen(int floor, int lives, int combo, int score,
     bool isBoss, int bossCorrect, int bossRequired,
     bool itemFloor, bool shieldUsed,
@@ -1315,25 +1315,25 @@ static void PrintQuizScreen(int floor, int lives, int combo, int score,
         string livesStr = "";
         for (int i = 0; i < lives; i++)  livesStr += "[O]";
         for (int i = lives; i < 3; i++)  livesStr += "[ ]";
-        cout << "=========== BOSS " << floor << "ì¸µ ["
+        cout << "=========== BOSS " << floor << "Ãş ["
             << bossCorrect << "/" << bossRequired << "] ===========\n";
-        cout << " ëª©ìˆ¨: " << livesStr
-            << "   ì½¤ë³´: x" << combo
-            << "   ì ìˆ˜: " << score << "\n";
+        cout << " ¸ñ¼û: " << livesStr
+            << "   ÄŞº¸: x" << combo
+            << "   Á¡¼ö: " << score << "\n";
     }
     else {
         PrintTower(floor, lives, combo, score);
     }
 
-    cout << " ë‚œì´ë„: " << GetDifficultyLabel(floor) << "\n";
+    cout << " ³­ÀÌµµ: " << GetDifficultyLabel(floor) << "\n";
     if (itemFloor && !shieldUsed)
-        cout << " [SHIELD] ì‹¤ë“œ ë³´ìœ  ì¤‘\n";
+        cout << " [SHIELD] ½Çµå º¸À¯ Áß\n";
     cout << "-----------------------------------------\n";
 
     if (floor >= 30 && !isBoss)
-        cout << " ë¬¸ì œ: " << desc << "\n (íŒíŠ¸ ì—†ìŒ - ê³ ë‚œì´ë„ êµ¬ê°„)\n";
+        cout << " ¹®Á¦: " << desc << "\n (ÈùÆ® ¾øÀ½ - °í³­ÀÌµµ ±¸°£)\n";
     else
-        cout << " ë¬¸ì œ: " << desc << "\n";
+        cout << " ¹®Á¦: " << desc << "\n";
 
     cout << "-----------------------------------------\n";
     for (int k = 0; k < 4; k++) {
@@ -1341,46 +1341,46 @@ static void PrintQuizScreen(int floor, int lives, int combo, int score,
             << k + 1 << ". " << choices[k] << "\n";
     }
     cout << "-----------------------------------------\n";
-    cout << " ^v: ì´ë™  Enter: ì„ íƒ  ESC: ê²Œì„ ì¢…ë£Œ\n";
+    cout << " ^v: ÀÌµ¿  Enter: ¼±ÅÃ  ESC: °ÔÀÓ Á¾·á\n";
 }
 
 // =================================================================
-// * ë©”ì¸ í•¨ìˆ˜ *
+// * ¸ŞÀÎ ÇÔ¼ö *
 // =================================================================
 void InfiniteTowerMode()
 {
-    // -- ê³¼ëª© ì„ íƒ ------------------------------------------------
-    string selectedFile = SelectSubjectMenu("ë¬´í•œì˜ íƒ‘: ì˜¤ë¥¼ ê³¼ëª©ì„ ì„ íƒí•˜ì„¸ìš”");
+    // -- °ú¸ñ ¼±ÅÃ ------------------------------------------------
+    string selectedFile = SelectSubjectMenu("¹«ÇÑÀÇ Å¾: ¿À¸¦ °ú¸ñÀ» ¼±ÅÃÇÏ¼¼¿ä");
     if (selectedFile.empty()) return;
 
     vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
     if (quizList.size() < 4) {
         screenClear();
-        cout << "  [ì˜¤ë¥˜] ë¬¸ì œê°€ 4ê°œ ì´ìƒ í•„ìš”í•©ë‹ˆë‹¤.\n";
-        cout << "  ì•„ë¬´ í‚¤ë‚˜ ëˆŒëŸ¬ì£¼ì„¸ìš”...";
+        cout << "  [¿À·ù] ¹®Á¦°¡ 4°³ ÀÌ»ó ÇÊ¿äÇÕ´Ï´Ù.\n";
+        cout << "  ¾Æ¹« Å°³ª ´­·¯ÁÖ¼¼¿ä...";
         _getch();
         return;
     }
 
     srand((unsigned)time(nullptr));
 
-    // -- ì¸íŠ¸ë¡œ ì—°ì¶œ ----------------------------------------------
+    // -- ÀÎÆ®·Î ¿¬Ãâ ----------------------------------------------
     screenClear();
     cout << "\n";
     cout << "  +----------------------------------+\n";
-    cout << "  |       **  ë¬´í•œì˜ íƒ‘  **          |\n";
+    cout << "  |       **  ¹«ÇÑÀÇ Å¾  **          |\n";
     cout << "  |                                  |\n";
-    cout << "  |  * ëª©ìˆ¨ 3ê°œë¡œ ì‹œì‘í•©ë‹ˆë‹¤         |\n";
-    cout << "  |  * ì •ë‹µì„ ë§ì¶”ë©´ ì¸µì´ ì˜¬ë¼ê°€ìš”   |\n";
-    cout << "  |  * ì˜¤ë‹µ -> ëª©ìˆ¨ -1               |\n";
-    cout << "  |  * 5ì½¤ë³´ë§ˆë‹¤ ëª©ìˆ¨ +1 íšŒë³µ        |\n";
-    cout << "  |  * 10ì¸µë§ˆë‹¤ ë³´ìŠ¤ì „ ë“±ì¥!         |\n";
-    cout << "  |  * ëª©ìˆ¨ì´ ë‹¤í•˜ë©´ ê²Œì„ ì¢…ë£Œ       |\n";
+    cout << "  |  * ¸ñ¼û 3°³·Î ½ÃÀÛÇÕ´Ï´Ù         |\n";
+    cout << "  |  * Á¤´äÀ» ¸ÂÃß¸é ÃşÀÌ ¿Ã¶ó°¡¿ä   |\n";
+    cout << "  |  * ¿À´ä -> ¸ñ¼û -1               |\n";
+    cout << "  |  * 5ÄŞº¸¸¶´Ù ¸ñ¼û +1 È¸º¹        |\n";
+    cout << "  |  * 10Ãş¸¶´Ù º¸½ºÀü µîÀå!         |\n";
+    cout << "  |  * ¸ñ¼ûÀÌ ´ÙÇÏ¸é °ÔÀÓ Á¾·á       |\n";
     cout << "  +----------------------------------+\n";
-    cout << "\n  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ì‹œì‘í•©ë‹ˆë‹¤...\n";
+    cout << "\n  ¾Æ¹« Å°³ª ´©¸£¸é ½ÃÀÛÇÕ´Ï´Ù...\n";
     _getch();
 
-    // -- ê²Œì„ ë³€ìˆ˜ ì´ˆê¸°í™” -----------------------------------------
+    // -- °ÔÀÓ º¯¼ö ÃÊ±âÈ­ -----------------------------------------
     int  lives = 3;
     int  maxLives = 5;
     int  floor = 0;
@@ -1391,21 +1391,21 @@ void InfiniteTowerMode()
     int  wrongCnt = 0;
     bool shieldUsed = false;
 
-    // -- ë©”ì¸ ë£¨í”„ ------------------------------------------------
+    // -- ¸ŞÀÎ ·çÇÁ ------------------------------------------------
     while (lives > 0) {
         floor++;
         bool boss = IsBossFloor(floor);
 
         // +-------------------------------------------------------+
-        // | ë³´ìŠ¤ì¸µ ì§„ì… ì—°ì¶œ                                       |
+        // | º¸½ºÃş ÁøÀÔ ¿¬Ãâ                                       |
         // +-------------------------------------------------------+
         if (boss) {
             screenClear();
             cout << "\n";
             cout << "  +======================================+\n";
-            cout << "  |  !! " << floor << "ì¸µ  BOSS FLOOR ë“±ì¥!  !!    |\n";
-            cout << "  |  4ì§€ì„ ë‹¤ 3ë¬¸ì œ ì—°ì† ì •ë‹µìœ¼ë¡œ í†µê³¼!  |\n";
-            cout << "  |  í‹€ë¦¬ë©´ ì²˜ìŒë¶€í„° + ëª©ìˆ¨ -1          |\n";
+            cout << "  |  !! " << floor << "Ãş  BOSS FLOOR µîÀå!  !!    |\n";
+            cout << "  |  4Áö¼±´Ù 3¹®Á¦ ¿¬¼Ó Á¤´äÀ¸·Î Åë°ú!  |\n";
+            cout << "  |  Æ²¸®¸é Ã³À½ºÎÅÍ + ¸ñ¼û -1          |\n";
             cout << "  +======================================+\n";
             cout << "\n";
             cout << "            /\\_____/\\\n";
@@ -1416,12 +1416,12 @@ void InfiniteTowerMode()
             cout << "         ( (  )   (  ) )\n";
             cout << "        (__(__)___(__)__)\n";
             cout << "\n        [ BOSS MONSTER ]\n";
-            cout << "\n  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ì‹œì‘...\n";
+            cout << "\n  ¾Æ¹« Å°³ª ´©¸£¸é ½ÃÀÛ...\n";
             _getch();
         }
 
         // +-------------------------------------------------------+
-        // | ë³´ìŠ¤ì¸µ: 4ì§€ì„ ë‹¤ 3ë¬¸ì œ ì—°ì† ì •ë‹µ                        |
+        // | º¸½ºÃş: 4Áö¼±´Ù 3¹®Á¦ ¿¬¼Ó Á¤´ä                        |
         // +-------------------------------------------------------+
         if (boss) {
             const int bossRequired = 3;
@@ -1460,9 +1460,9 @@ void InfiniteTowerMode()
                             score += 200 + (combo * 50);
                             correctCnt++;
                             screenClear();
-                            cout << "\n  [O] ì •ë‹µ! BOSS ["
+                            cout << "\n  [O] Á¤´ä! BOSS ["
                                 << bossCorrect << "/" << bossRequired << "]\n";
-                            cout << "  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ê³„ì†...\n";
+                            cout << "  ¾Æ¹« Å°³ª ´©¸£¸é °è¼Ó...\n";
                             _getch();
                         }
                         else {
@@ -1471,10 +1471,10 @@ void InfiniteTowerMode()
                             bossCorrect = 0;
                             wrongCnt++;
                             screenClear();
-                            cout << "\n  [X] ì˜¤ë‹µ! ì •ë‹µ: "
+                            cout << "\n  [X] ¿À´ä! Á¤´ä: "
                                 << quizList[idx].nameKr
-                                << "\n  ëª©ìˆ¨ -1  ë³´ìŠ¤ì „ ì²˜ìŒë¶€í„°!\n";
-                            cout << "  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ê³„ì†...\n";
+                                << "\n  ¸ñ¼û -1  º¸½ºÀü Ã³À½ºÎÅÍ!\n";
+                            cout << "  ¾Æ¹« Å°³ª ´©¸£¸é °è¼Ó...\n";
                             _getch();
                         }
                     }
@@ -1484,37 +1484,37 @@ void InfiniteTowerMode()
                 }
             } // while bossCorrect
 
-            // ë³´ìŠ¤ í´ë¦¬ì–´ ë³´ìƒ
+            // º¸½º Å¬¸®¾î º¸»ó
             if (lives > 0) {
                 int oldLives = lives;
                 lives = min(lives + 1, maxLives);
                 score += 500;
                 screenClear();
-                cout << "\n  [CLEAR!] BOSS í´ë¦¬ì–´!  ëª©ìˆ¨ +" << (lives - oldLives)
-                    << " ë³´ìƒ!  +500ì !\n";
-                cout << "  í˜„ì¬ ëª©ìˆ¨: ";
+                cout << "\n  [CLEAR!] BOSS Å¬¸®¾î!  ¸ñ¼û +" << (lives - oldLives)
+                    << " º¸»ó!  +500Á¡!\n";
+                cout << "  ÇöÀç ¸ñ¼û: ";
                 for (int i = 0; i < lives; i++) cout << "[O]";
-                cout << "\n\n  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ê³„ì†...\n";
+                cout << "\n\n  ¾Æ¹« Å°³ª ´©¸£¸é °è¼Ó...\n";
                 _getch();
             }
             continue;
         } // if (boss)
 
         // +-------------------------------------------------------+
-        // | ì¼ë°˜ ì¸µ: 4ì§€ì„ ë‹¤ 1ë¬¸ì œ                                  |
+        // | ÀÏ¹İ Ãş: 4Áö¼±´Ù 1¹®Á¦                                  |
         // +-------------------------------------------------------+
         {
-            // 5ì˜ ë°°ìˆ˜ ì¸µ = ì•„ì´í…œ ì¸µ
+            // 5ÀÇ ¹è¼ö Ãş = ¾ÆÀÌÅÛ Ãş
             bool itemFloor = (floor % 5 == 0);
             if (itemFloor) {
                 screenClear();
                 cout << "\n";
                 cout << "  +==============================+\n";
-                cout << "  |  [ITEM] " << floor << "ì¸µ  ì•„ì´í…œ ì¸µ!     |\n";
-                cout << "  |  ì´ë²ˆ ì¸µì€ ì‹¤ë“œê°€ ì§€ê¸‰ë©ë‹ˆë‹¤ |\n";
-                cout << "  |  (ì˜¤ë‹µ 1íšŒ ëª©ìˆ¨ ë³´í˜¸!)       |\n";
+                cout << "  |  [ITEM] " << floor << "Ãş  ¾ÆÀÌÅÛ Ãş!     |\n";
+                cout << "  |  ÀÌ¹ø ÃşÀº ½Çµå°¡ Áö±ŞµË´Ï´Ù |\n";
+                cout << "  |  (¿À´ä 1È¸ ¸ñ¼û º¸È£!)       |\n";
                 cout << "  +==============================+\n";
-                cout << "\n  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ê³„ì†...\n";
+                cout << "\n  ¾Æ¹« Å°³ª ´©¸£¸é °è¼Ó...\n";
                 shieldUsed = false;
                 _getch();
             }
@@ -1543,7 +1543,7 @@ void InfiniteTowerMode()
                 else if (key == KEY_ENTER) {
                     answered = true;
                     if (focusChoice == answerSlot) {
-                        // -- ì •ë‹µ ì²˜ë¦¬ --------------------------
+                        // -- Á¤´ä Ã³¸® --------------------------
                         combo++;
                         if (combo > bestCombo) bestCombo = combo;
                         int gain = 100 + (combo * 20);
@@ -1553,40 +1553,40 @@ void InfiniteTowerMode()
                         correctCnt++;
 
                         screenClear();
-                        cout << "\n  [O] ì •ë‹µ!  +" << gain << "ì ";
+                        cout << "\n  [O] Á¤´ä!  +" << gain << "Á¡";
                         if (combo >= 3)
                             cout << "  ** " << combo << " COMBO! **";
                         cout << "\n";
 
-                        // 5ì½¤ë³´ ëª©ìˆ¨ íšŒë³µ
+                        // 5ÄŞº¸ ¸ñ¼û È¸º¹
                         if (combo % 5 == 0) {
                             int oldLives = lives;
                             lives = min(lives + 1, maxLives);
                             if (lives > oldLives)
-                                cout << "  [+1] " << combo << "ì½¤ë³´ ë‹¬ì„±! ëª©ìˆ¨ +1!\n";
+                                cout << "  [+1] " << combo << "ÄŞº¸ ´Ş¼º! ¸ñ¼û +1!\n";
                         }
-                        cout << "\n  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ê³„ì†...\n";
+                        cout << "\n  ¾Æ¹« Å°³ª ´©¸£¸é °è¼Ó...\n";
                         _getch();
                     }
                     else {
-                        // -- ì˜¤ë‹µ ì²˜ë¦¬ --------------------------
+                        // -- ¿À´ä Ã³¸® --------------------------
                         if (itemFloor && !shieldUsed) {
                             shieldUsed = true;
                             combo = 0;
                             wrongCnt++;
                             screenClear();
-                            cout << "\n  [X] ì˜¤ë‹µ!  [SHIELD] ì‹¤ë“œ ë°œë™ -> ëª©ìˆ¨ ë³´í˜¸!\n";
-                            cout << "  ì •ë‹µ: " << quizList[idx].nameKr << "\n";
+                            cout << "\n  [X] ¿À´ä!  [SHIELD] ½Çµå ¹ßµ¿ -> ¸ñ¼û º¸È£!\n";
+                            cout << "  Á¤´ä: " << quizList[idx].nameKr << "\n";
                         }
                         else {
                             lives--;
                             combo = 0;
                             wrongCnt++;
                             screenClear();
-                            cout << "\n  [X] ì˜¤ë‹µ! ì •ë‹µ: "
-                                << quizList[idx].nameKr << "  ëª©ìˆ¨ -1\n";
+                            cout << "\n  [X] ¿À´ä! Á¤´ä: "
+                                << quizList[idx].nameKr << "  ¸ñ¼û -1\n";
                         }
-                        cout << "\n  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ê³„ì†...\n";
+                        cout << "\n  ¾Æ¹« Å°³ª ´©¸£¸é °è¼Ó...\n";
                         _getch();
                     }
                 }
@@ -1594,11 +1594,11 @@ void InfiniteTowerMode()
                     goto GameOver;
                 }
             }
-        } // ì¼ë°˜ì¸µ ë¸”ë¡
+        } // ÀÏ¹İÃş ºí·Ï
     } // while lives > 0
 
     // =============================================================
-    // * GAME OVER í™”ë©´ *
+    // * GAME OVER È­¸é *
     // =============================================================
 GameOver:
     floor--;
@@ -1609,11 +1609,11 @@ GameOver:
     cout << "  +====================================+\n";
     cout << "  |           ** GAME OVER **          |\n";
     cout << "  +====================================+\n";
-    cout << "  |  ë„ë‹¬í•œ ì¸µ  :  " << floor << " ì¸µ\n";
-    cout << "  |  ìµœì¢… ì ìˆ˜  : " << score << " ì \n";
-    cout << "  |  ì •ë‹µ ìˆ˜    : " << correctCnt << " ë¬¸ì œ\n";
-    cout << "  |  ì˜¤ë‹µ ìˆ˜    : " << wrongCnt << " ë¬¸ì œ\n";
-    cout << "  |  ìµœê³  ì½¤ë³´  : x" << bestCombo << "\n";
+    cout << "  |  µµ´ŞÇÑ Ãş  :  " << floor << " Ãş\n";
+    cout << "  |  ÃÖÁ¾ Á¡¼ö  : " << score << " Á¡\n";
+    cout << "  |  Á¤´ä ¼ö    : " << correctCnt << " ¹®Á¦\n";
+    cout << "  |  ¿À´ä ¼ö    : " << wrongCnt << " ¹®Á¦\n";
+    cout << "  |  ÃÖ°í ÄŞº¸  : x" << bestCombo << "\n";
     cout << "  +====================================+\n";
     cout << GetGrade(floor) << "\n";
     cout << "  +====================================+\n";
@@ -1621,9 +1621,9 @@ GameOver:
     int total = correctCnt + wrongCnt;
     if (total > 0) {
         int pct = (correctCnt * 100) / total;
-        cout << "\n  ì •ë‹µë¥ : " << pct << "%\n";
+        cout << "\n  Á¤´ä·ü: " << pct << "%\n";
     }
 
-    cout << "\n  ì•„ë¬´ í‚¤ë‚˜ ëˆ„ë¥´ë©´ ë©”ë‰´ë¡œ ëŒì•„ê°‘ë‹ˆë‹¤...\n";
+    cout << "\n  ¾Æ¹« Å°³ª ´©¸£¸é ¸Ş´º·Î µ¹¾Æ°©´Ï´Ù...\n";
     _getch();
 }

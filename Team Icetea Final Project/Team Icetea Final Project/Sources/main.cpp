@@ -4,10 +4,10 @@
 
 int main()
 {
-    // ë°ì´í„° ë¡œë“œ
+    // µ¥ÀÌÅÍ ·Îµå
     LoadAllQuestionData();
 
-    // ë©”ë‰´ ì‹¤í–‰
+    // ¸Ş´º ½ÇÇà
     ShowMainMenu();
 
     return 0;
