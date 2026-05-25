@@ -1468,10 +1468,24 @@ void BossMonsterMode()
         cout << quizList[i].desc << endl;
         cout << "--------------------------------------" << endl;
 
+        string correctAnswer = quizList[i].nameKr;
+
+        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), ' '), correctAnswer.end());
+        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\r'), correctAnswer.end());
+        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\n'), correctAnswer.end());
+
+        if (correctAnswer == "O" || correctAnswer == "X")
+        {
+            cout << "[ O / X 문제 ]" << endl;
+        }
+
         cout << "정답 입력: ";
         getline(cin, userAnswer);
 
-        if (userAnswer == quizList[i].nameKr)
+        transform(userAnswer.begin(), userAnswer.end(), userAnswer.begin(), ::toupper);
+        transform(correctAnswer.begin(), correctAnswer.end(), correctAnswer.begin(), ::toupper);
+
+        if (userAnswer == correctAnswer)
         {
             combo++;
 
