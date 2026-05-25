@@ -454,7 +454,7 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
             else            cout << "  2. 키워드" << endl;
 
             cout << "--------------------------------" << endl;
-            cout << "↑↓: 이동, Enter: 선택, ESC: 뒤로 가기" << endl;
+            cout << "↑↓:이동  Enter:선택  ESC:뒤로 가기" << endl;
 
             int key = _getch();
             if (key == 224) // 화살표 키 처리
@@ -1080,7 +1080,7 @@ void PracticeQuestionSolve()
             }
             
             cout << "----------------------------------------" << endl;
-            cout << "↑↓: 이동  Enter: 결정  ESC: 학습 중단" << endl;
+            cout << "↑↓:이동  Enter:결정  ESC:학습 중단" << endl;
 
             int input = _getch();
             if (input == 224) { // 방향키 입력 처리
@@ -1130,7 +1130,7 @@ FinalEnd:
     cout << "                                          " << endl;
     cout << "==========================================" << endl;
     cout << endl;
-    cout << "      ESC를 누르면 메뉴로 돌아갑니다.     " << endl;
+    cout << "ESC:메뉴로 돌아가기" << endl;
     cout << endl;
     cout << "==========================================" << endl;
 
@@ -1237,7 +1237,7 @@ void ExamQuestionSolve()
             for (int k = 0; k < maxChoices; k++) {
                 cout << (k == focus ? "> " : "  ") << k + 1 << ". " << options[k] << endl;
             }
-            cout << "\n↑↓: 이동  Enter: 제출  ESC: 중단" << endl;
+            cout << "\n↑↓:이동  Enter:제출  ESC:중단" << endl;
 
             int key = _getch();
             if (key == 224) {
@@ -1276,7 +1276,7 @@ void ExamQuestionSolve()
         _getch();
         return;
     }
-    cout << "\nENTER: 오답 복습 시작  ESC: 종료" << endl;
+    cout << "\nEnter:오답 복습 시작  ESC:종료" << endl;
     if (_getch() == 27) {
         return;
     }
@@ -1318,7 +1318,7 @@ void ExamQuestionSolve()
                 cout << "\n---------------------------------" << endl;
                 cout << " [해설]\n " << ExamQuestions[idx].commentary << endl;
                 cout << "---------------------------------" << endl;
-                cout << "Enter: 다음 문제  ESC: 중단" << endl;
+                cout << "Enter:다음 문제  ESC:중단" << endl;
                 int k = _getch();
                 if (k == 13) break; else if (k == 27) return;
             }
@@ -1348,7 +1348,7 @@ FinalScore:
     cout << "                                          " << endl;
     cout << "==========================================" << endl;
     cout << endl;
-    cout << "      ESC를 누르면 메뉴로 돌아갑니다.     " << endl;
+    cout << "ESC:메뉴로 돌아가기" << endl;
     cout << endl;
     cout << "==========================================" << endl;
 
@@ -1647,7 +1647,7 @@ static void PrintQuizScreen(int floor, int lives, int combo, int score,
             << k + 1 << ". " << choices[k] << "\n";
     }
     cout << "-----------------------------------------\n";
-    cout << " ^v: 이동  Enter: 선택  ESC: 게임 종료\n";
+    cout << " ↑↓:이동  Enter:선택  ESC:게임 종료\n";
 }
 
 // =================================================================

@@ -118,7 +118,7 @@ void ShowGameModeMenu(int logoWidth)
         }
         cout << endl;
 
-        string footer = "방향키 : 이동  |  Enter키 : 선택  |  Esc키 : 뒤로 가기";
+        string footer = "↑↓:이동  Enter:선택  ESC:뒤로 가기";
         string separator = "----------------------------------------------------------------------";
 
         PrintCentered(separator, logoWidth);
@@ -201,7 +201,7 @@ void ShowMainMenu()
         }
         cout << endl;
 
-        string footer = "방향키 : 이동  |  Enter키 : 선택  |  Esc키 : 종료";
+        string footer = "↑↓:이동  Enter:선택  ESC:종료";
         string separator = "----------------------------------------------------------------------";
 
         PrintCentered(separator, logoWidth);
