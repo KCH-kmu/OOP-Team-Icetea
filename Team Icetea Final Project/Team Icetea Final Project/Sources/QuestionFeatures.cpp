@@ -1558,13 +1558,13 @@ static void PrintTower(int floor, int lives, int combo, int score)
 
     cout << "\n";
     for (int f = floor + 2; f >= floor - 2; f--) {
-        if (f < 1) { cout << "  |            |\n"; continue; }
+        if (f < 1) { cout << "  |             |\n"; continue; }
         if (f == floor)
             cout << "  |==[" << f << "F HERE]==|\n";
         else
             cout << "  |     " << f << "F      |\n";
     }
-    cout << "  |____________|\n";
+    cout << "  |_____________|\n";
     cout << "\n";
     cout << "  ¸ñ¼û:" << livesStr << "   ÄÞº¸: x" << combo
         << "   Á¡¼ö: " << score << "\n";
