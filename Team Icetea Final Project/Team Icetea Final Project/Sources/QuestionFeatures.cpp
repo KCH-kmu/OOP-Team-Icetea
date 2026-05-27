@@ -1479,13 +1479,32 @@ void BossMonsterMode()
             cout << "[ O / X 문제 ]" << endl;
         }
 
-        cout << "정답 입력: ";
-        getline(cin, userAnswer);
+        vector<string> options =
+        {
+            quizList[i].nameKr,
+            quizList[i].nameEn,
+            quizList[i].character,
+            quizList[i].keyword
+        };
+
+        shuffle(options.begin(), options.end(), g);
+
+        for (int k = 0; k < 4; k++)
+        {
+            cout << k + 1 << ". " << options[k] << endl;
+        }
+
+        cout << endl;
+        cout << "번호 입력: ";
+        getline(cin, userAnswer);if (userAnswer == correctAnswer)
 
         transform(userAnswer.begin(), userAnswer.end(), userAnswer.begin(), ::toupper);
         transform(correctAnswer.begin(), correctAnswer.end(), correctAnswer.begin(), ::toupper);
 
-        if (userAnswer == correctAnswer)
+        int selected = stoi(userAnswer);
+
+        if (selected >= 1 && selected <= 4 &&
+            options[selected - 1] == correctAnswer)
         {
             combo++;
 
