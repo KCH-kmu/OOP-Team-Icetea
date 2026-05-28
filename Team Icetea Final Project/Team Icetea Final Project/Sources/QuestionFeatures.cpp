@@ -1409,23 +1409,28 @@ void PrintAttackEffect(int damage)
 
 void BossMonsterMode()
 {
-    string selectedFile = SelectSubjectMenu("보스전에 사용할 과목을 선택하세요");
-    if (selectedFile == "") return;
+    screenClear();
 
-    vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
+    cout << "========== 몬스터 처치 모드 ==========" << endl;
+    cout << endl;
+    cout << "[게임 룰]" << endl;
+    cout << "1. 문제를 맞히면 보스에게 데미지를 줍니다." << endl;
+    cout << "2. 기본 데미지는 1입니다." << endl;
+    cout << "3. 3콤보부터 데미지가 3으로 증가합니다." << endl;
+    cout << "4. 5콤보부터 데미지가 5로 증가합니다." << endl;
+    cout << "5. OX 문제, 객관식 문제, 주관식 문제가 나올 수 있습니다." << endl;
+    cout << "6. 한 챕터의 문제를 모두 풀어도 보스 HP가 남아 있으면 다른 챕터를 선택해 계속 공격합니다." << endl;
+    cout << "7. 제한 시간 안에 보스 HP를 0으로 만들면 승리합니다." << endl;
+    cout << endl;
+    cout << "보스 HP: 100" << endl;
+    cout << "제한 시간: 120초" << endl;
+    cout << endl;
+    cout << "아무 키나 누르면 챕터 선택 화면으로 이동합니다..." << endl;
 
-    if (quizList.empty())
-    {
-        screenClear();
-        cout << "문제 데이터가 없습니다." << endl;
-        cout << "아무 키나 눌러주세요..." << endl;
-        _getch();
-        return;
-    }
+    _getch();
 
     random_device rd;
     mt19937 g(rd());
-    shuffle(quizList.begin(), quizList.end(), g);
 
     int bossHp = 100;
     int maxBossHp = 100;
@@ -1435,121 +1440,186 @@ void BossMonsterMode()
 
     time_t startTime = time(nullptr);
 
-    for (int i = 0; i < (int)quizList.size(); i++)
+    while (bossHp > 0)
     {
-        if (bossHp <= 0) break;
-
         int elapsed = (int)(time(nullptr) - startTime);
         int remainTime = timeLimit - elapsed;
 
-        if (remainTime <= 0) break;
+        if (remainTime <= 0)
+            break;
 
-        string userAnswer;
+        string selectedFile = SelectSubjectMenu("공격할 챕터를 선택하세요");
+        if (selectedFile == "")
+            return;
 
-        screenClear();
+        vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
 
-        cout << "========== 몬스터 처치 모드 ==========" << endl;
-        cout << "남은 시간: " << remainTime << "초" << endl;
-        cout << "점수: " << score << endl;
-        cout << "콤보: " << combo << endl;
-
-        cout << "Boss HP: [";
-        int hpBar = bossHp / 5;
-
-        for (int j = 0; j < hpBar; j++) cout << "#";
-        for (int j = hpBar; j < 20; j++) cout << "-";
-
-        cout << "] " << bossHp << " / " << maxBossHp << endl;
-        
-        PrintBoss();
-
-        cout << "--------------------------------------" << endl;
-        cout << "문제 [" << i + 1 << " / " << quizList.size() << "]" << endl;
-        cout << quizList[i].desc << endl;
-        cout << "--------------------------------------" << endl;
-
-        string correctAnswer = quizList[i].nameKr;
-
-        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), ' '), correctAnswer.end());
-        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\r'), correctAnswer.end());
-        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\n'), correctAnswer.end());
-
-        if (correctAnswer == "O" || correctAnswer == "X")
+        if (quizList.empty())
         {
-            cout << "[ O / X 문제 ]" << endl;
+            screenClear();
+            cout << "문제 데이터가 없습니다." << endl;
+            cout << "아무 키나 눌러주세요..." << endl;
+            _getch();
+            continue;
         }
 
-        vector<string> options =
+        shuffle(quizList.begin(), quizList.end(), g);
+
+        for (int i = 0; i < (int)quizList.size(); i++)
         {
-            quizList[i].nameKr,
-            quizList[i].nameEn,
-            quizList[i].character,
-            quizList[i].keyword
-        };
+            if (bossHp <= 0) break;
 
-        shuffle(options.begin(), options.end(), g);
+            elapsed = (int)(time(nullptr) - startTime);
+            remainTime = timeLimit - elapsed;
 
-        for (int k = 0; k < 4; k++)
-        {
-            cout << k + 1 << ". " << options[k] << endl;
-        }
+            if (remainTime <= 0) break;
 
-        cout << endl;
-        cout << "번호 입력: ";
-        getline(cin, userAnswer);if (userAnswer == correctAnswer)
+            string userAnswer;
 
-        transform(userAnswer.begin(), userAnswer.end(), userAnswer.begin(), ::toupper);
-        transform(correctAnswer.begin(), correctAnswer.end(), correctAnswer.begin(), ::toupper);
-
-        int selected = stoi(userAnswer);
-
-        if (selected >= 1 && selected <= 4 &&
-            options[selected - 1] == correctAnswer)
-        {
-            combo++;
-
-            int damage = 1;
-
-            if (combo >= 5)
-                damage = 5;
-            else if (combo >= 3)
-                damage = 3;
-
-            bossHp -= damage;
-            if (bossHp < 0) bossHp = 0;
-
-            score += damage * 10;
-            score += combo * 2;
-
-            cout << endl;
-            
             screenClear();
 
             cout << "========== 몬스터 처치 모드 ==========" << endl;
-            cout << "[정답!] 공격 성공!" << endl;
-            cout << "보스에게 " << damage << " 데미지!" << endl;
+            cout << "남은 시간: " << remainTime << "초" << endl;
+            cout << "점수: " << score << endl;
+            cout << "콤보: " << combo << endl;
 
-            if (combo >= 3)
+            cout << "Boss HP: [";
+            int hpBar = bossHp / 5;
+
+            for (int j = 0; j < hpBar; j++) cout << "#";
+            for (int j = hpBar; j < 20; j++) cout << "-";
+
+            cout << "] " << bossHp << " / " << maxBossHp << endl;
+
+            PrintBoss();
+
+            cout << "--------------------------------------" << endl;
+            cout << "문제 [" << i + 1 << " / " << quizList.size() << "]" << endl;
+            cout << quizList[i].desc << endl;
+            cout << "--------------------------------------" << endl;
+
+            string correctAnswer = quizList[i].nameKr;
+
+            correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), ' '), correctAnswer.end());
+            correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\r'), correctAnswer.end());
+            correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\n'), correctAnswer.end());
+
+            bool isCorrect = false;
+
+            if (correctAnswer == "O" || correctAnswer == "X")
             {
-                cout << "콤보 보너스 발동!" << endl;
+                cout << "[ O / X 문제 ]" << endl;
+                cout << "정답 입력(O/X): ";
+                getline(cin, userAnswer);
+
+                transform(userAnswer.begin(), userAnswer.end(), userAnswer.begin(), ::toupper);
+                transform(correctAnswer.begin(), correctAnswer.end(), correctAnswer.begin(), ::toupper);
+
+                isCorrect = (userAnswer == correctAnswer);
+            }
+            else if (!quizList[i].nameEn.empty() &&
+                !quizList[i].character.empty() &&
+                !quizList[i].keyword.empty())
+            {
+                cout << "[ 객관식 문제 ]" << endl;
+
+                vector<string> options =
+                {
+                    quizList[i].nameKr,
+                    quizList[i].nameEn,
+                    quizList[i].character,
+                    quizList[i].keyword
+                };
+
+                shuffle(options.begin(), options.end(), g);
+
+                for (int k = 0; k < 4; k++)
+                {
+                    cout << k + 1 << ". " << options[k] << endl;
+                }
+
+                cout << endl;
+                cout << "번호 입력: ";
+                getline(cin, userAnswer);
+
+                try
+                {
+                    int selected = stoi(userAnswer);
+
+                    if (selected >= 1 && selected <= 4)
+                    {
+                        isCorrect = (options[selected - 1] == quizList[i].nameKr);
+                    }
+                }
+                catch (...)
+                {
+                    isCorrect = false;
+                }
+            }
+            else
+            {
+                cout << "[ 주관식 문제 ]" << endl;
+                cout << "정답 입력: ";
+                getline(cin, userAnswer);
+
+                isCorrect = (userAnswer == quizList[i].nameKr);
             }
 
-            PrintBossDamaged();
+            if (isCorrect)
+            {
+                combo++;
 
-            cout << endl;
-            cout << "아무 키나 누르면 다음 문제로 이동합니다..." << endl;
+                int damage = 1;
+
+                if (combo >= 5)
+                    damage = 5;
+                else if (combo >= 3)
+                    damage = 3;
+
+                bossHp -= damage;
+                if (bossHp < 0) bossHp = 0;
+
+                score += damage * 10;
+                score += combo * 2;
+
+                screenClear();
+
+                cout << "========== 몬스터 처치 모드 ==========" << endl;
+                cout << "[정답!] 공격 성공!" << endl;
+                cout << "보스에게 " << damage << " 데미지!" << endl;
+
+                if (combo >= 3)
+                {
+                    cout << "콤보 보너스 발동!" << endl;
+                }
+
+                PrintBossDamaged();
+
+                cout << endl;
+                cout << "아무 키나 누르면 다음 문제로 이동합니다..." << endl;
+                _getch();
+            }
+            else
+            {
+                combo = 0;
+
+                cout << endl;
+                cout << "[오답] 공격 실패!" << endl;
+                cout << "정답: " << quizList[i].nameKr << endl;
+                cout << "아무 키나 누르면 다음 문제로 이동합니다..." << endl;
+                _getch();
+            }
+        }
+
+        if (bossHp > 0)
+        {
+            screenClear();
+            cout << "이 챕터의 문제를 모두 풀었습니다." << endl;
+            cout << "현재 보스 HP: " << bossHp << " / " << maxBossHp << endl;
+            cout << "다른 챕터를 선택해서 계속 공격하세요." << endl;
+            cout << "아무 키나 누르면 챕터 선택으로 돌아갑니다..." << endl;
             _getch();
         }
-        else
-        {
-            combo = 0;
-
-            cout << endl;
-            cout << "[오답] 공격 실패!" << endl;
-            cout << "정답: " << quizList[i].nameKr << endl;
-        }
-
-        cout << endl;
     }
 
     screenClear();
