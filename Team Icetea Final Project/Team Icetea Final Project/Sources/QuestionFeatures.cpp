@@ -408,7 +408,7 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
             q.nameEn = fields[3];    // 오답1
             q.character = fields[4]; // 오답2 (기존 변수 재활용)
             q.keyword = fields[5];   // 오답3 (기존 변수 재활용)
-            q.level = (fields.size() > 6) ? stoi(fields[6]) : 0;
+            q.level = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
             q.commentary = (fields.size() > 7) ? fields[7] : "";
             q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // 검색용 키워드
             list.push_back(q);
@@ -1021,7 +1021,7 @@ void PracticeQuestionSolve()
             q.keyword = (fields.size() > 5) ? fields[5] : "";
 
             // 난이도 저장 (문자열 "1"을 정수 1로 변환)
-            q.level = stoi(fields[6]);
+            q.level = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
 
             if (fields.size() >= 8) {
                 q.commentary = fields[7];
@@ -1169,7 +1169,7 @@ void ExamQuestionSolve()
             q.keyword = (fields.size() > 5) ? fields[5] : "";
 
             // 난이도 저장 (문자열 "1"을 정수 1로 변환)
-            q.level = stoi(fields[6]);
+            q.level = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
 
             if (fields.size() >= 8) q.commentary = fields[7];
             else {

@@ -95,7 +95,7 @@ void LoadAllQuestionData()
                     q.nameEn        = fields[3]; // wrong answer 1
                     q.character     = fields[4]; // wrong answer 2
                     q.keyword       = fields[5]; // wrong answer 3
-                    q.level         = (fields.size() > 6 && !fields[6].empty()) ? stoi(fields[6]) : 0;
+                    q.level         = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
                     q.commentary    = (fields.size() > 7) ? fields[7] : "";
                     q.searchKeyword = (fields.size() > 8) ? fields[8] : "";
                     PracticeQuestions.push_back(q);
