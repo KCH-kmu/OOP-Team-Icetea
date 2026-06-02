@@ -1533,18 +1533,57 @@ void BossMonsterMode()
 
                 shuffle(options.begin(), options.end(), g);
 
-                for (int k = 0; k < 4; k++)
-                {
-                    cout << k + 1 << ". " << options[k] << endl;
-                }
+                int focus = 0;
+                int key;
 
-                cout << endl;
-                cout << "번호 입력: ";
-                getline(cin, userAnswer);
+                while (true)
+                {
+                    screenClear();
+
+                    cout << "[ 객관식 문제 ]" << endl;
+                    cout << quizList[i].desc << endl;
+                    cout << endl;
+
+                    for (int k = 0; k < 4; k++)
+                    {
+                        if (focus == k)
+                            cout << "> ";
+                        else
+                            cout << "  ";
+
+                        cout << k + 1 << ". " << options[k] << endl;
+                    }
+
+                    key = _getch();
+
+                    if (key == 224)
+                    {
+                        key = _getch();
+
+                        if (key == KEY_UP)
+                        {
+                            focus--;
+
+                            if (focus < 0)
+                                focus = 3;
+                        }
+                        else if (key == KEY_DOWN)
+                        {
+                            focus++;
+
+                            if (focus > 3)
+                                focus = 0;
+                        }
+                    }
+                    else if (key == KEY_ENTER)
+                    {
+                        break;
+                    }
+                }
 
                 try
                 {
-                    int selected = stoi(userAnswer);
+                    int selected = focus + 1;
 
                     if (selected >= 1 && selected <= 4)
                     {
