@@ -404,10 +404,10 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
         if (fields.size() >= 6) {
             Question q;
             q.desc = fields[1];      // 문제 내용
-            q.nameKr = fields[2];    // 정답
-            q.nameEn = fields[3];    // 오답1
-            q.character = fields[4]; // 오답2 (기존 변수 재활용)
-            q.keyword = fields[5];   // 오답3 (기존 변수 재활용)
+            q.answer = fields[2];    // 정답
+            q.wrongAnswer1 = fields[3];    // 오답1
+            q.wrongAnswer2 = fields[4]; // 오답 2번
+            q.wrongAnswer3 = fields[5];   // 오답 3번
             q.level = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
             q.commentary = (fields.size() > 7) ? fields[7] : "";
             q.searchKeyword = (fields.size() > 8) ? fields[8] : ""; // 검색용 키워드
@@ -424,7 +424,7 @@ void ShowQuestionDetail(const Question& Question)
     screenClear();
     cout << "=== 문제 정보 ===" << endl;
     cout << "문제: " << Question.desc << endl;
-    cout << "정답: " << Question.nameKr << endl;
+    cout << "정답: " << Question.answer << endl;
     _getch();
 }
 
@@ -500,8 +500,8 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
         {
             bool isFound = false;
             // criteria 변수(1:이름, 2:캐릭터, 3:키워드)를 사용하여 검색
-            if (criteria == 1 && Question.nameKr.find(query) != string::npos) isFound = true;
-            else if (criteria == 2 && Question.keyword.find(query) != string::npos) isFound = true;
+            if (criteria == 1 && Question.answer.find(query) != string::npos) isFound = true;
+            else if (criteria == 2 && Question.wrongAnswer3.find(query) != string::npos) isFound = true;
 
             if (isFound) results.push_back(Question);
         }
@@ -543,8 +543,8 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
                         cout << "  ";
 
                     int realIndex = startIndex + i;
-                    cout << (realIndex + 1) << ". " << results[realIndex].nameKr
-                        << " (" << results[realIndex].character << ")" << endl;
+                    cout << (realIndex + 1) << ". " << results[realIndex].answer
+                        << " (" << results[realIndex].wrongAnswer2 << ")" << endl;
                 }
                 else
                 {
@@ -934,19 +934,19 @@ void ExamQuestionMake()
     Question newQuestion;
 
     cout << "문제 이름(한글) 입력: ";
-    getline(cin, newQuestion.nameKr);
+    getline(cin, newQuestion.answer);
 
     cout << "문제 이름(영문) 입력: ";
-    getline(cin, newQuestion.nameEn);
+    getline(cin, newQuestion.wrongAnswer1);
 
     cout << "전승 캐릭터 입력: ";
-    getline(cin, newQuestion.character);
+    getline(cin, newQuestion.wrongAnswer2);
 
     cout << "문제 설명 입력: ";
     getline(cin, newQuestion.desc);
 
     cout << "키워드 입력: ";
-    getline(cin, newQuestion.keyword);
+    getline(cin, newQuestion.wrongAnswer3);
 
     cout << "\n저장하시겠습니까? (y/n): ";
     char confirm = _getch();
@@ -981,7 +981,7 @@ void BuildChoices(const vector<Question>& pool, int questionIndex,
             // 자기 자신이 오답으로 뽑히지 않도록 do-while로 걸러냄
             int fallback;
             do { fallback = rand() % (int)pool.size(); } while (fallback == questionIndex);
-            wrongPool.push_back(pool[fallback].nameKr);
+            wrongPool.push_back(pool[fallback].answer);
         }
     }
 
@@ -990,7 +990,7 @@ void BuildChoices(const vector<Question>& pool, int questionIndex,
     choices.clear();
     int wrongUsed = 0;
     for (int i = 0; i < 4; i++)
-        choices.push_back(i == answerSlot ? cur.nameKr : wrongPool[wrongUsed++]);
+        choices.push_back(i == answerSlot ? cur.answer : wrongPool[wrongUsed++]);
 }
 
 // ─────────────────────────────────────────
@@ -1015,10 +1015,10 @@ void PracticeQuestionSolve()
         if (fields.size() >= 7) { // 최소 난이도 칸까지는 있어야 함
             Question q;
             q.desc = fields[1];
-            q.nameKr = fields[2];    // 정답 (OX일 때 'O' 또는 'X')
-            q.nameEn = fields[3];    // 오답 (OX일 때 'X' 또는 'O')
-            q.character = (fields.size() > 4) ? fields[4] : "";
-            q.keyword = (fields.size() > 5) ? fields[5] : "";
+            q.answer = fields[2];    // 정답 (OX일 때 'O' 또는 'X')
+            q.wrongAnswer1 = fields[3];    // 오답 (OX일 때 'X' 또는 'O')
+            q.wrongAnswer2 = (fields.size() > 4) ? fields[4] : "";
+            q.wrongAnswer3 = (fields.size() > 5) ? fields[5] : "";
 
             // 난이도 저장 (문자열 "1"을 정수 1로 변환)
             q.level = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
@@ -1054,7 +1054,7 @@ void PracticeQuestionSolve()
             maxChoices = 2;
         }
         else {
-            options = { quizList[i].nameKr, quizList[i].nameEn, quizList[i].character, quizList[i].keyword };
+            options = { quizList[i].answer, quizList[i].wrongAnswer1, quizList[i].wrongAnswer2, quizList[i].wrongAnswer3 };
             random_device rd;
             mt19937 g(rd());
             shuffle(options.begin(), options.end(), g);
@@ -1095,13 +1095,13 @@ void PracticeQuestionSolve()
             else if (input == KEY_ENTER) {
                 answered = true;
                 // Enter를 누르면 현재 focus에 있는 답이 정답인지 확인
-                if (options[focus] == quizList[i].nameKr) {
+                if (options[focus] == quizList[i].answer) {
                     cout << "\n[ 정답 ]" << endl;
                     score++;
                 }
                 else {
                     cout << "\n[ 오답 ]" << endl;
-                    cout << "정답: " << quizList[i].nameKr << endl;
+                    cout << "정답: " << quizList[i].answer << endl;
                 }
 
                 cout << "\n [ 문제 해설 ]" << endl;
@@ -1163,10 +1163,10 @@ void ExamQuestionSolve()
         if (fields.size() >= 7) { // 최소 난이도 칸까지는 있어야 함
             Question q;
             q.desc = fields[1];
-            q.nameKr = fields[2];    // 정답 (OX일 때 'O' 또는 'X')
-            q.nameEn = fields[3];    // 오답 (OX일 때 'X' 또는 'O')
-            q.character = (fields.size() > 4) ? fields[4] : "";
-            q.keyword = (fields.size() > 5) ? fields[5] : "";
+            q.answer = fields[2];    // 정답 (OX일 때 'O' 또는 'X')
+            q.wrongAnswer1 = fields[3];    // 오답 (OX일 때 'X' 또는 'O')
+            q.wrongAnswer2 = (fields.size() > 4) ? fields[4] : "";
+            q.wrongAnswer3 = (fields.size() > 5) ? fields[5] : "";
 
             // 난이도 저장 (문자열 "1"을 정수 1로 변환)
             q.level = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
@@ -1221,7 +1221,7 @@ void ExamQuestionSolve()
             maxChoices = 2;
         }
         else {
-            options = { ExamQuestions[i].nameKr, ExamQuestions[i].nameEn, ExamQuestions[i].character, ExamQuestions[i].keyword };
+            options = { ExamQuestions[i].answer, ExamQuestions[i].wrongAnswer1, ExamQuestions[i].wrongAnswer2, ExamQuestions[i].wrongAnswer3 };
             shuffle(options.begin(), options.end(), g);
             maxChoices = 4;
         }
@@ -1250,7 +1250,7 @@ void ExamQuestionSolve()
                 }
             }
             else if (key == KEY_ENTER) {
-                if (options[focus] == ExamQuestions[i].nameKr) {
+                if (options[focus] == ExamQuestions[i].answer) {
                     score++;
                 }
                 else {
@@ -1291,7 +1291,7 @@ void ExamQuestionSolve()
             maxChoices = 2;
         }
         else {
-            options = { ExamQuestions[idx].nameKr, ExamQuestions[idx].nameEn, ExamQuestions[idx].character, ExamQuestions[idx].keyword };
+            options = { ExamQuestions[idx].answer, ExamQuestions[idx].wrongAnswer1, ExamQuestions[idx].wrongAnswer2, ExamQuestions[idx].wrongAnswer3 };
             shuffle(options.begin(), options.end(), g);
             maxChoices = 4;
         }
@@ -1307,7 +1307,7 @@ void ExamQuestionSolve()
 
             for (int k = 0; k < maxChoices; k++) {
                 if (answered) {
-                    if (options[k] == ExamQuestions[idx].nameKr) cout << "O ";
+                    if (options[k] == ExamQuestions[idx].answer) cout << "O ";
                     else if (k == focus && !isCorrect) cout << "X ";
                     else cout << "  ";
                 } else cout << (k == focus ? "> " : "  ");
@@ -1334,7 +1334,7 @@ void ExamQuestionSolve()
                     }
                 } else if (k == 13) {
                     answered = true;
-                    isCorrect = (options[focus] == ExamQuestions[idx].nameKr);
+                    isCorrect = (options[focus] == ExamQuestions[idx].answer);
                 }
             }
         }
@@ -1498,7 +1498,7 @@ void BossMonsterMode()
             cout << quizList[i].desc << endl;
             cout << "--------------------------------------" << endl;
 
-            string correctAnswer = quizList[i].nameKr;
+            string correctAnswer = quizList[i].answer;
 
             correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), ' '), correctAnswer.end());
             correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\r'), correctAnswer.end());
@@ -1517,18 +1517,18 @@ void BossMonsterMode()
 
                 isCorrect = (userAnswer == correctAnswer);
             }
-            else if (!quizList[i].nameEn.empty() &&
-                !quizList[i].character.empty() &&
-                !quizList[i].keyword.empty())
+            else if (!quizList[i].wrongAnswer1.empty() &&
+                !quizList[i].wrongAnswer2.empty() &&
+                !quizList[i].wrongAnswer3.empty())
             {
                 cout << "[ 객관식 문제 ]" << endl;
 
                 vector<string> options =
                 {
-                    quizList[i].nameKr,
-                    quizList[i].nameEn,
-                    quizList[i].character,
-                    quizList[i].keyword
+                    quizList[i].answer,
+                    quizList[i].wrongAnswer1,
+                    quizList[i].wrongAnswer2,
+                    quizList[i].wrongAnswer3
                 };
 
                 shuffle(options.begin(), options.end(), g);
@@ -1605,7 +1605,7 @@ void BossMonsterMode()
 
                     if (selected >= 1 && selected <= 4)
                     {
-                        isCorrect = (options[selected - 1] == quizList[i].nameKr);
+                        isCorrect = (options[selected - 1] == quizList[i].answer);
                     }
                 }
                 catch (...)
@@ -1619,7 +1619,7 @@ void BossMonsterMode()
                 cout << "정답 입력: ";
                 getline(cin, userAnswer);
 
-                isCorrect = (userAnswer == quizList[i].nameKr);
+                isCorrect = (userAnswer == quizList[i].answer);
             }
 
             if (isCorrect)
@@ -1662,7 +1662,7 @@ void BossMonsterMode()
 
                 cout << endl;
                 cout << "[오답] 공격 실패!" << endl;
-                cout << "정답: " << quizList[i].nameKr << endl;
+                cout << "정답: " << quizList[i].answer << endl;
                 cout << "아무 키나 누르면 다음 문제로 이동합니다..." << endl;
                 _getch();
             }
@@ -1724,21 +1724,21 @@ static void BuildTowerChoices(const vector<Question>& pool, int qIdx,
     const Question& cur = pool[qIdx];
     vector<string> wrongs;
 
-    if (!cur.nameEn.empty())    wrongs.push_back(cur.nameEn);
-    if (!cur.character.empty()) wrongs.push_back(cur.character);
-    if (!cur.keyword.empty())   wrongs.push_back(cur.keyword);
+    if (!cur.wrongAnswer1.empty())    wrongs.push_back(cur.wrongAnswer1);
+    if (!cur.wrongAnswer2.empty()) wrongs.push_back(cur.wrongAnswer2);
+    if (!cur.wrongAnswer3.empty())   wrongs.push_back(cur.wrongAnswer3);
 
     while ((int)wrongs.size() < 3) {
         int fallback = rand() % (int)pool.size();
-        if (fallback != qIdx && pool[fallback].nameKr != cur.nameKr)
-            wrongs.push_back(pool[fallback].nameKr);
+        if (fallback != qIdx && pool[fallback].answer != cur.answer)
+            wrongs.push_back(pool[fallback].answer);
     }
 
     answerSlot = rand() % 4;
     choices.clear();
     int wi = 0;
     for (int i = 0; i < 4; i++)
-        choices.push_back((i == answerSlot) ? cur.nameKr : wrongs[wi++]);
+        choices.push_back((i == answerSlot) ? cur.answer : wrongs[wi++]);
 }
 
 // -- 난이도 단계 텍스트 -------------------------------------------
@@ -1939,7 +1939,7 @@ void InfiniteTowerMode() {
                             wrongCnt++;
                             screenClear();
                             cout << "\n  [X] 오답! 정답: "
-                                << quizList[idx].nameKr
+                                << quizList[idx].answer
                                 << "\n  목숨 -1  보스전 처음부터!\n";
                             cout << "  아무 키나 누르면 계속...\n";
                             _getch();
@@ -2043,7 +2043,7 @@ void InfiniteTowerMode() {
                             wrongCnt++;
                             screenClear();
                             cout << "\n  [X] 오답!  [SHIELD] 실드 발동 -> 목숨 보호!\n";
-                            cout << "  정답: " << quizList[idx].nameKr << "\n";
+                            cout << "  정답: " << quizList[idx].answer << "\n";
                         }
                         else {
                             lives--;
@@ -2051,7 +2051,7 @@ void InfiniteTowerMode() {
                             wrongCnt++;
                             screenClear();
                             cout << "\n  [X] 오답! 정답: "
-                                << quizList[idx].nameKr << "  목숨 -1\n";
+                                << quizList[idx].answer << "  목숨 -1\n";
                         }
                         cout << "\n  아무 키나 누르면 계속...\n";
                         _getch();

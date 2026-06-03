@@ -91,10 +91,10 @@ void LoadAllQuestionData()
                 {
                     Question q;
                     q.desc          = fields[1];
-                    q.nameKr        = fields[2]; // correct answer
-                    q.nameEn        = fields[3]; // wrong answer 1
-                    q.character     = fields[4]; // wrong answer 2
-                    q.keyword       = fields[5]; // wrong answer 3
+                    q.answer        = fields[2]; // 정답
+                    q.wrongAnswer1        = fields[3]; // 오답 1번
+                    q.wrongAnswer2     = fields[4]; // 오답 2번
+                    q.wrongAnswer3       = fields[5]; // 오답 3번
                     q.level         = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
                     q.commentary    = (fields.size() > 7) ? fields[7] : "";
                     q.searchKeyword = (fields.size() > 8) ? fields[8] : "";
