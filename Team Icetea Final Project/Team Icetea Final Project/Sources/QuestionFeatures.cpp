@@ -1538,11 +1538,29 @@ void BossMonsterMode()
 
                 while (true)
                 {
+                    int curElapsed = (int)(time(nullptr) - startTime);
+                    int curRemainTime = timeLimit - curElapsed;
+
                     screenClear();
 
+                    cout << "========== 몬스터 처치 모드 ==========" << endl;
+                    cout << "남은 시간: " << curRemainTime << "초" << endl;
+                    cout << "점수: " << score << endl;
+                    cout << "콤보: " << combo << endl;
+
+                    cout << "Boss HP: [";
+                    int curHpBar = bossHp / 5;
+                    for (int j = 0; j < curHpBar; j++) cout << "#";
+                    for (int j = curHpBar; j < 20; j++) cout << "-";
+                    cout << "] " << bossHp << " / " << maxBossHp << endl;
+
+                    PrintBoss();
+
+                    cout << "--------------------------------------" << endl;
+                    cout << "문제 [" << i + 1 << " / " << quizList.size() << "]" << endl;
                     cout << "[ 객관식 문제 ]" << endl;
                     cout << quizList[i].desc << endl;
-                    cout << endl;
+                    cout << "--------------------------------------" << endl;
 
                     for (int k = 0; k < 4; k++)
                     {
