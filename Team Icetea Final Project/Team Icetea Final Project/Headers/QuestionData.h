@@ -7,15 +7,15 @@ using namespace std;
 
 // 문제 하나에 대한 정보를 담는 구조체
 struct Question {
-    string answer;    // 정답
-    string wrongAnswer1;   // 오답 1번
-    string wrongAnswer2;   // 오답 2번
-    string wrongAnswer3;   // 오답 3번 (아직 미구현 시 빈칸)
-    string desc;            // 문제 설명 (아직 미구현 시 빈칸)
-    string commentary; // 해설 (정답 선택 후 표시되는 내용)
-    string searchKeyword; // 검색용 키워드 필드
-    vector<string> wrongChoices;
-    int level;
+    string answer;        // 정답
+    string wrongAnswer1;  // 오답 1번
+    string wrongAnswer2;  // 오답 2번
+    string wrongAnswer3;  // 오답 3번
+    string desc;          // 문제 설명
+    string commentary;    // 해설 (정답 풀린 후 표시)
+    string searchKeyword; // 검색어 키워드
+    vector<string> wrongChoices; // 추가 오답 후보 풀
+    int level;            // 난이도
 };
 
 // 문제 데이터를 저장할 전역 벡터 (외부에서 접근 가능하게 extern 선언)
