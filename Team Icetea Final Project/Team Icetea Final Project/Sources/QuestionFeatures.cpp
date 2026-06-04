@@ -418,14 +418,27 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
     return list;
 }
 
-// [유지됨] 세미콜론 줄바꿈 기능 제거 (원래대로 복구)
+// 문제 상세 보기: 상단에 문제(desc), 하단에 정답(answer)과 문제 풀이(commentary)를 풀이 화면처럼 표시
 void ShowQuestionDetail(const Question& Question)
 {
     screenClear();
-    cout << "=== 문제 정보 ===" << endl;
-    cout << "문제: " << Question.desc << endl;
-    cout << "정답: " << Question.answer << endl;
-    _getch();
+    cout << "=== 문제 상세 보기 ===" << endl;
+    cout << "----------------------------------------" << endl;
+    // 문제 내용 (상단)
+    cout << (Question.desc.empty() ? "(문제 데이터가 없습니다)" : Question.desc) << endl;
+    cout << "----------------------------------------" << endl;
+    // 정답 (하단)
+    cout << " [ 정답 ]" << endl;
+    cout << " " << (Question.answer.empty() ? "(없음)" : Question.answer) << endl;
+    // 문제 풀이(해설) (하단)
+    cout << "\n [ 문제 해설 ]" << endl;
+    if (!Question.commentary.empty())
+        cout << " " << Question.commentary << endl;
+    else
+        cout << " [ 등록된 해설이 없습니다. ]" << endl;
+    cout << "----------------------------------------" << endl;
+    cout << "ESC 또는 아무 키나 누르면 목록으로 돌아갑니다.";
+    _getch(); // 키 입력 대기
 }
 
 // [수정됨] 검색 기준 선택을 상하 방향키 메뉴 방식으로 변경
@@ -728,15 +741,8 @@ void PracticeQuestionSearch()
         }
         else if (key == KEY_ENTER) {
             if (total == 0) continue; // 결과 없으면 무시
-            // 추후 수정 예정 - 문제 상세 보기
-            // 현재는 선택된 원본 인덱스 정보만 알림 (디버깅용)
-            screenClear();
-            const Question& selected = questions[displayIdx[focus]];
-            cout << "선택된 문제: Lv." << selected.level
-                << "  키워드: " << (selected.searchKeyword.empty() ? "-" : selected.searchKeyword) << endl;
-            cout << "(상세 보기 기능은 추후 수정 예정)" << endl;
-            cout << "아무 키나 눌러주세요..." << endl;
-            _getch();
+            // 선택된 문제의 상세 정보(문제/정답/해설) 표시
+            ShowQuestionDetail(questions[displayIdx[focus]]);
         }
         else if (key == KEY_ESC) {
             return;
