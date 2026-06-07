@@ -18,11 +18,25 @@ struct Question {
     int level;            // 난이도
 };
 
-// 문제 데이터를 저장할 전역 벡터 (외부에서 접근 가능하게 extern 선언)
-extern vector<Question> PracticeQuestions;
-extern vector<Question> ExamQuestions;
+// ===== 문제 데이터 보관/로딩 클래스 (싱글턴) =====
+// 기존 전역 벡터(PracticeQuestions / ExamQuestions)를 캡슐화한다.
+class QuestionBank {
+public:
+    // 싱글턴 인스턴스 접근자
+    static QuestionBank& Instance();
 
-// 데이터 로딩 함수 선언
-void LoadAllQuestionData();
+    // 시작 시 ./QuestionData/ 폴더의 모든 CSV를 연습문제로 로드
+    void LoadAll();
+    // 시험문제 추가 (현재는 CSV 직접 저장 방식이라 비워둠)
+    void AddExam(const Question& newQuestion);
 
-void AddExamQuestion(const Question& newQuestion);
+    // 연습문제 벡터 접근
+    vector<Question>& Practice();
+    // 시험문제 벡터 접근
+    vector<Question>& Exam();
+
+private:
+    QuestionBank() = default;   // 외부 생성 금지 (싱글턴)
+    vector<Question> practice_; // 연습문제 데이터
+    vector<Question> exam_;     // 시험문제 데이터
+};

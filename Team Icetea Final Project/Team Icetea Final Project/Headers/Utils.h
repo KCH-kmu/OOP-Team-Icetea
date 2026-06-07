@@ -1,6 +1,7 @@
 #pragma once // 헤더 파일 중복 포함 방지
 #include <iostream>
 #include <conio.h>
+#include <string>
 
 // 키보드 값 상수 정의
 #define KEY_UP 72
@@ -12,9 +13,15 @@
 #define KEY_TAB 9         // 탭 키 (정렬 모드 순환 이동)
 #define KEY_BACKSPACE 8   // 백스페이스 (검색 입력 시 글자 삭제)
 
-// 화면 지우기 함수
-inline void screenClear()
+// ===== 콘솔 출력 유틸리티 클래스 =====
+// 화면 지우기 등 콘솔 표시 관련 기능을 정적 메서드로 제공한다.
+class ConsoleUI
 {
-    std::cout << "\033[2J\033[H";
-    std::cout.flush();
-}
+public:
+    // 화면 지우기 (ANSI 이스케이프 시퀀스 사용)
+    static void Clear()
+    {
+        std::cout << "\033[2J\033[H";
+        std::cout.flush();
+    }
+};

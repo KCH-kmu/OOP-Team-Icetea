@@ -22,7 +22,7 @@ namespace fs = std::filesystem;
 
 // ===== CSV 이스케이프 헬퍼 (RFC 4180) =====
 // 콤마, 큰따옴표, 줄바꿈이 포함된 필드를 "..."로 감싸는 함수
-static string EscapeCSVField(const string& s) {
+string CSVUtil::EscapeField(const string& s) {
     bool needsQuote = (s.find(',')  != string::npos ||
                        s.find('"') != string::npos ||
                        s.find('\n') != string::npos ||
@@ -60,7 +60,7 @@ static bool ContainsCI(const string& haystack, const string& needleLower) {
 // 정렬 모드 enum 대용 상수
 // 0: 번호 오름차순, 1: 번호 내림차순, 2: 레벨 오름차순, 3: 레벨 내림차순
 // 정렬+검색 결과로 화면에 표시할 원본 인덱스 목록을 생성
-static vector<int> BuildDisplayIndex(const vector<Question>& src, int sortMode, const string& searchLower) {
+vector<int> QuestionSearch::BuildDisplayIndex(const vector<Question>& src, int sortMode, const string& searchLower) {
     vector<int> idx;
     idx.reserve(src.size());
     for (int i = 0; i < (int)src.size(); i++) {
@@ -92,8 +92,8 @@ static vector<int> BuildDisplayIndex(const vector<Question>& src, int sortMode, 
 
 // 키워드 검색 입력 화면 - 사용자가 입력한 검색어로 currentKeyword를 갱신
 // 빈 문자열로 Enter 시 검색 해제
-static void PromptSearchKeyword(string& currentKeyword) {
-    screenClear();
+void QuestionSearch::PromptSearchKeyword(string& currentKeyword) {
+    ConsoleUI::Clear();
     cout << "=== 키워드 검색 ===" << endl;
     cout << "----------------------------------------" << endl;
     cout << "검색어를 입력하세요." << endl;
@@ -110,7 +110,7 @@ static void PromptSearchKeyword(string& currentKeyword) {
 }
 
 // CSV의 한 줄을 파싱하는 함수 (사용자 정의 규칙 적용)
-vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
+vector<string> CSVUtil::ParseLine(const string& firstLine, ifstream& file) {
     vector<string> result;
     string cell;
     bool inQuotes = false;
@@ -166,7 +166,7 @@ vector<string> ParseCSVLine(const string& firstLine, ifstream& file) {
 // ===== 새 과목 등록 화면 =====
 // 사용 중인 번호를 스캔해 두 가지 추천 번호를 보여준 뒤 사용자가 직접 입력.
 // 성공 시 새 CSV 파일 경로 반환, 취소 시 빈 문자열 반환.
-static string PromptNewSubject() {
+string SubjectSelector::PromptNewSubject() {
     string folderPath = "./QuestionData";
 
     // 사용 중인 과목 번호 수집
@@ -185,7 +185,7 @@ static string PromptNewSubject() {
     int suggestNext = usedNumbers.empty() ? 1 : (*usedNumbers.rbegin() + 1);
 
     while (true) {
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== 새 과목 등록 ===" << endl;
         cout << "----------------------------------------" << endl;
         cout << "[추천 번호]" << endl;
@@ -229,7 +229,7 @@ static string PromptNewSubject() {
 
         string newPath = folderPath + "/" + to_string(newNum) + ". " + newName + ".csv";
 
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== 새 과목 등록 ===" << endl;
         cout << "----------------------------------------" << endl;
         cout << "다음 파일을 생성합니다:" << endl;
@@ -254,7 +254,7 @@ static string PromptNewSubject() {
     }
 }
 
-string SelectSubjectMenu(string title = "학습할 과목을 선택하세요", bool allowCreate = false) {
+string SubjectSelector::Select(string title, bool allowCreate) {
     vector<pair<string, string>> subjects; // 과목코드.이름, 전체경로
 
     // 현재 디렉토리에서 .csv 확장자 파일만 수집
@@ -262,7 +262,7 @@ string SelectSubjectMenu(string title = "학습할 과목을 선택하세요", bool allowCr
 
     // 폴더가 없는 경우 알림
     if (!fs::exists(folderPath)) {
-        screenClear();
+        ConsoleUI::Clear();
         cout << "[오류] 폴더를 찾을 수 없습니다: " << folderPath << endl;
         cout << "상대 경로 확인이 필요합니다." << endl;
         _getch();
@@ -308,7 +308,7 @@ string SelectSubjectMenu(string title = "학습할 과목을 선택하세요", bool allowCr
         int startIdx = currentPage * itemsPerPage;
         int endIdx = min(startIdx + itemsPerPage, total);
 
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== " << title << " ===" << endl;
         cout << "--------------------------------" << endl;
 
@@ -387,7 +387,7 @@ string SelectSubjectMenu(string title = "학습할 과목을 선택하세요", bool allowCr
 }
 
 // CSV 파일에서 데이터를 로드하여 퀴즈 리스트를 만드는 공통 함수
-vector<Question> LoadQuestionsFromCSV(const string& path) {
+vector<Question> CSVUtil::LoadQuestions(const string& path) {
     vector<Question> list;
     ifstream file(path);
 
@@ -399,7 +399,7 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
     while (getline(file, line)) {
         if (line.empty()) continue;
 
-        vector<string> fields = ParseCSVLine(line, file);
+        vector<string> fields = CSVUtil::ParseLine(line, file);
 
         if (fields.size() >= 6) {
             Question q;
@@ -419,9 +419,9 @@ vector<Question> LoadQuestionsFromCSV(const string& path) {
 }
 
 // 문제 상세 보기: 상단에 문제(desc), 하단에 정답(answer)과 문제 풀이(commentary)를 풀이 화면처럼 표시
-void ShowQuestionDetail(const Question& Question)
+void QuestionSearch::ShowQuestionDetail(const Question& Question)
 {
-    screenClear();
+    ConsoleUI::Clear();
     cout << "=== 문제 상세 보기 ===" << endl;
     cout << "----------------------------------------" << endl;
     // 문제 내용 (상단)
@@ -442,7 +442,7 @@ void ShowQuestionDetail(const Question& Question)
 }
 
 // [수정됨] 검색 기준 선택을 상하 방향키 메뉴 방식으로 변경
-void SearchLogic(const vector<Question>& targetQuestions, string typeName)
+void QuestionSearch::SearchLogic(const vector<Question>& targetQuestions, string typeName)
 {
     while (true)
     {
@@ -455,7 +455,7 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
 
         while (true)
         {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "=== " << typeName << " 문제 검색 ===" << endl;
             cout << "검색 기준을 선택하세요." << endl;
             cout << "--------------------------------" << endl;
@@ -497,7 +497,7 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
 
         // 2. 검색어 입력
         string query;
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== " << typeName << " 문제 검색 ===" << endl;
         // 선택한 기준을 화면에 표시
         cout << "[검색 기준: " << criteriaNames[criteria - 1] << "]" << endl;
@@ -536,7 +536,7 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
 
         while (true)
         {
-            screenClear();
+            ConsoleUI::Clear();
 
             // [수정됨] 헤더에 검색 기준 포함
             // 예: 단어 : 문제 이름 [눈속임]
@@ -619,16 +619,16 @@ void SearchLogic(const vector<Question>& targetQuestions, string typeName)
     }
 }
 
-void PracticeQuestionSearch()
+void QuestionSearch::RunPractice()
 {
     // 과목 선택 화면 표시
-    string selectedFile = SelectSubjectMenu("검색할 과목을 선택하세요");
+    string selectedFile = SubjectSelector::Select("검색할 과목을 선택하세요");
     if (selectedFile.empty()) return;
 
     // 선택된 CSV 파일에서 문제 로드
-    vector<Question> questions = LoadQuestionsFromCSV(selectedFile);
+    vector<Question> questions = CSVUtil::LoadQuestions(selectedFile);
     if (questions.empty()) {
-        screenClear();
+        ConsoleUI::Clear();
         cout << "문제 데이터가 없습니다." << endl;
         cout << "아무 키나 눌러주세요..." << endl;
         _getch();
@@ -661,7 +661,7 @@ void PracticeQuestionSearch()
         int startIdx = currentPage * itemsPerPage;
         int endIdx = min(startIdx + itemsPerPage, total);
 
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== " << subjectName << " 문제 목록 ===" << endl;
 
         // 헤더: "번호"(4컬럼) + 4공백 + "난이도"(6컬럼) + 4공백 + "키워드"(6컬럼)
@@ -750,15 +750,15 @@ void PracticeQuestionSearch()
     }
 }
 
-void ExamQuestionSearch()
+void QuestionSearch::RunExam()
 {
-    SearchLogic(ExamQuestions, "시험모드");
+    SearchLogic(QuestionBank::Instance().Exam(), "시험모드");
 }
 
 // 추후 수정 예정
-void PracticeQuestionMake()
+void QuestionMaker::RunPractice()
 {
-    screenClear();
+    ConsoleUI::Clear();
     cout << "추후 수정 예정입니다." << endl;
     cout << "아무 키나 눌러주세요..." << endl;
     _getch();
@@ -767,10 +767,10 @@ void PracticeQuestionMake()
 // ===== 통합 문제 제작 함수 =====
 // 연습/시험 공용 CSV에 새 문제를 추가한다.
 // 난이도 1=OX, 2·3=4지선다. 연습·시험 모드는 풀이 화면에서 해설 표시 여부만 다름.
-void MakeQuestion()
+void QuestionMaker::Run()
 {
     // 1. 과목 선택 (F 키로 새 과목 등록 가능)
-    string selectedFile = SelectSubjectMenu("문제를 추가할 과목을 선택하세요", true);
+    string selectedFile = SubjectSelector::Select("문제를 추가할 과목을 선택하세요", true);
     if (selectedFile.empty()) return;
 
     string subjectName = fs::path(selectedFile).stem().string();
@@ -783,7 +783,7 @@ void MakeQuestion()
         getline(f, line); // 헤더 스킵
         while (getline(f, line)) {
             if (line.empty()) continue;
-            vector<string> fields = ParseCSVLine(line, f);
+            vector<string> fields = CSVUtil::ParseLine(line, f);
             if (!fields.empty()) {
                 try { int id = stoi(fields[0]); if (id >= nextID) nextID = id + 1; }
                 catch (...) {}
@@ -795,7 +795,7 @@ void MakeQuestion()
         // 3. 난이도 선택
         int difficulty = 0;
         {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "=== 새 문제 입력 ===" << endl;
             cout << "과목      : " << subjectName << ".csv" << endl;
             cout << "문제 번호 : " << nextID << endl;
@@ -815,7 +815,7 @@ void MakeQuestion()
         // 4. 내용 입력
         string desc, rAnswer, wAnswer1, wAnswer2, wAnswer3, keyword, explanation;
 
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== 새 문제 입력 ===" << endl;
         cout << "저장: " << subjectName << ".csv  (DataID: " << nextID << ")" << endl;
         cout << "난이도: Lv." << difficulty;
@@ -861,7 +861,7 @@ void MakeQuestion()
         cout << kwNum + 1 << ") 해설        (Enter=건너뜀): "; getline(cin, explanation);
 
         // 5. 확인 화면
-        screenClear();
+        ConsoleUI::Clear();
         cout << "------------ 입력 확인 ------------" << endl;
         cout << "과목     : " << subjectName << ".csv  (DataID: " << nextID << ")" << endl;
         cout << "난이도   : Lv." << difficulty;
@@ -908,21 +908,21 @@ void MakeQuestion()
                 cout << "[오류] 파일 저장 실패! Enter 키를 누르세요." << endl;
                 { string dummy; getline(cin, dummy); } continue;
             }
-            out << EscapeCSVField(to_string(nextID)) << ","
-                << EscapeCSVField(desc)        << ","
-                << EscapeCSVField(rAnswer)     << ","
-                << EscapeCSVField(wAnswer1)    << ","
-                << EscapeCSVField(wAnswer2)    << ","
-                << EscapeCSVField(wAnswer3)    << ","
+            out << CSVUtil::EscapeField(to_string(nextID)) << ","
+                << CSVUtil::EscapeField(desc)        << ","
+                << CSVUtil::EscapeField(rAnswer)     << ","
+                << CSVUtil::EscapeField(wAnswer1)    << ","
+                << CSVUtil::EscapeField(wAnswer2)    << ","
+                << CSVUtil::EscapeField(wAnswer3)    << ","
                 << difficulty                  << ","
-                << EscapeCSVField(explanation) << ","
-                << EscapeCSVField(keyword)     << "\r\n";
+                << CSVUtil::EscapeField(explanation) << ","
+                << CSVUtil::EscapeField(keyword)     << "\r\n";
             out.close();
         }
         nextID++;
 
         // 7. 저장 완료 → 계속 입력 or 메뉴로
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== 저장 완료 ===" << endl;
         cout << "문제 번호 " << (nextID - 1) << " 문제를 " << subjectName << ".csv 에 저장했습니다." << endl;
         string contInput;
@@ -933,9 +933,9 @@ void MakeQuestion()
 }
 
 // [유지됨] 입력 코드 줄바꿈 적용
-void ExamQuestionMake()
+void QuestionMaker::RunExam()
 {
-    screenClear();
+    ConsoleUI::Clear();
     cout << "=== 시험모드 문제 제작 ===" << endl;
     Question newQuestion;
 
@@ -957,7 +957,7 @@ void ExamQuestionMake()
     cout << "\n저장하시겠습니까? (y/n): ";
     char confirm = _getch();
     if (confirm == 'y' || confirm == 'Y') {
-        AddExamQuestion(newQuestion);
+        QuestionBank::Instance().AddExam(newQuestion);
         cout << "\n성공적으로 추가되었습니다! 아무 키나 누르면 돌아갑니다." << endl;
     }
     else {
@@ -968,7 +968,7 @@ void ExamQuestionMake()
 
 // PracticeQuestionSolve와 ExamQuestionSolve에서 공통으로 사용하는
 // 4지선다 보기 구성 함수 (중복 코드 제거 목적)
-void BuildChoices(const vector<Question>& pool, int questionIndex,
+void QuizManager::BuildChoices(const vector<Question>& pool, int questionIndex,
     vector<string>& choices, int& answerSlot)
 {
     const Question& cur = pool[questionIndex];
@@ -1002,9 +1002,9 @@ void BuildChoices(const vector<Question>& pool, int questionIndex,
 // ─────────────────────────────────────────
 // 연습문제 풀기
 // ─────────────────────────────────────────
-void PracticeQuestionSolve()
+void QuizManager::SolvePractice()
 {
-    string selectedFile = SelectSubjectMenu();
+    string selectedFile = SubjectSelector::Select();
     if (selectedFile == "") return;
 
     ifstream file(selectedFile);
@@ -1016,7 +1016,7 @@ void PracticeQuestionSolve()
 
     while (getline(file, line)) {
         if (line.empty()) continue;
-        vector<string> fields = ParseCSVLine(line, file);
+        vector<string> fields = CSVUtil::ParseLine(line, file);
 
         if (fields.size() >= 7) { // 최소 난이도 칸까지는 있어야 함
             Question q;
@@ -1071,7 +1071,7 @@ void PracticeQuestionSolve()
         bool answered = false;
 
         while (!answered) {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "=== 문제 [" << i + 1 << " / " << quizList.size() << "] ===" << endl;
             cout << "----------------------------------------" << endl;
             cout << quizList[i].desc << endl;
@@ -1129,7 +1129,7 @@ void PracticeQuestionSolve()
     }
     
 FinalEnd:
-    screenClear();
+    ConsoleUI::Clear();
     cout << "==========================================" << endl;
     cout << "                                          " << endl;
     cout << "             연습을 완료했습니다!         " << endl;
@@ -1149,10 +1149,12 @@ FinalEnd:
 // ─────────────────────────────────────────
 // 시험모드
 // ─────────────────────────────────────────
-void ExamQuestionSolve()
+void QuizManager::SolveExam()
 {
+    // 시험문제 데이터(싱글턴)에 대한 참조 별칭
+    vector<Question>& ExamQuestions = QuestionBank::Instance().Exam();
     // 과목 선택
-    string selectedFile = SelectSubjectMenu();
+    string selectedFile = SubjectSelector::Select();
     if (selectedFile == "") return;
 
     ExamQuestions.clear();
@@ -1164,7 +1166,7 @@ void ExamQuestionSolve()
 
     while (getline(file, line)) {
         if (line.empty()) continue;
-        vector<string> fields = ParseCSVLine(line, file);
+        vector<string> fields = CSVUtil::ParseLine(line, file);
 
         if (fields.size() >= 7) { // 최소 난이도 칸까지는 있어야 함
             Question q;
@@ -1198,7 +1200,7 @@ void ExamQuestionSolve()
     // 문제 수 설정 및 셔플
     int examCount = 0;
     while (true) {
-        screenClear();
+        ConsoleUI::Clear();
         cout << "=== 시험 모드: " << fs::path(selectedFile).stem().string() << " ===" << endl;
         cout << "풀 문제 수 입력 (4 ~ " << ExamQuestions.size() << "): ";
         string input; getline(cin, input);
@@ -1236,7 +1238,7 @@ void ExamQuestionSolve()
         bool answered = false;
 
         while (!answered) {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "=== 시험 [" << i + 1 << " / " << examCount << "] ===" << endl;
             cout << "\n " << ExamQuestions[i].desc << "\n" << endl;
 
@@ -1272,7 +1274,7 @@ void ExamQuestionSolve()
 
     // 결과 및 오답 복습
     time_t elapsed = time(nullptr) - startTime;
-    screenClear();
+    ConsoleUI::Clear();
     cout << "=== 시험 완료 ===" << endl;
     cout << " 성적: " << score << " / " << examCount << endl;
     cout << " 시간: " << elapsed / 60 << "분 " << elapsed % 60 << "초" << endl;
@@ -1307,7 +1309,7 @@ void ExamQuestionSolve()
         bool isCorrect = false;
 
         while (true) {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "=== 오답 복습 (시험 때 선택: " << rec.second << ") ===" << endl;
             cout << "\n " << ExamQuestions[idx].desc << "\n" << endl;
 
@@ -1347,7 +1349,7 @@ void ExamQuestionSolve()
     }
 FinalScore:
     // G. 최종 종료 화면
-    screenClear();
+    ConsoleUI::Clear();
     cout << "==========================================" << endl;
     cout << "                                          " << endl;
     cout << "             복습을 완료했습니다!         " << endl;
@@ -1365,7 +1367,7 @@ FinalScore:
     }
 }
 
-void PrintBoss()
+void BossMonsterMode::PrintBoss()
 {
     cout << endl;
 
@@ -1382,7 +1384,7 @@ void PrintBoss()
     cout << endl;
 }
 
-void PrintBossDamaged()
+void BossMonsterMode::PrintBossDamaged()
 {
     cout << endl;
 
@@ -1399,7 +1401,7 @@ void PrintBossDamaged()
     cout << endl;
 }
 
-void PrintAttackEffect(int damage)
+void BossMonsterMode::PrintAttackEffect(int damage)
 {
     cout << endl;
 
@@ -1413,9 +1415,9 @@ void PrintAttackEffect(int damage)
     cout << endl;
 }
 
-void BossMonsterMode()
+void BossMonsterMode::Run()
 {
-    screenClear();
+    ConsoleUI::Clear();
 
     cout << "========== 몬스터 처치 모드 ==========" << endl;
     cout << endl;
@@ -1454,15 +1456,15 @@ void BossMonsterMode()
         if (remainTime <= 0)
             break;
 
-        string selectedFile = SelectSubjectMenu("공격할 챕터를 선택하세요");
+        string selectedFile = SubjectSelector::Select("공격할 챕터를 선택하세요");
         if (selectedFile == "")
             return;
 
-        vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
+        vector<Question> quizList = CSVUtil::LoadQuestions(selectedFile);
 
         if (quizList.empty())
         {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "문제 데이터가 없습니다." << endl;
             cout << "아무 키나 눌러주세요..." << endl;
             _getch();
@@ -1482,7 +1484,7 @@ void BossMonsterMode()
 
             string userAnswer;
 
-            screenClear();
+            ConsoleUI::Clear();
 
             cout << "========== 몬스터 처치 모드 ==========" << endl;
             cout << "남은 시간: " << remainTime << "초" << endl;
@@ -1547,7 +1549,7 @@ void BossMonsterMode()
                     int curElapsed = (int)(time(nullptr) - startTime);
                     int curRemainTime = timeLimit - curElapsed;
 
-                    screenClear();
+                    ConsoleUI::Clear();
 
                     cout << "========== 몬스터 처치 모드 ==========" << endl;
                     cout << "남은 시간: " << curRemainTime << "초" << endl;
@@ -1645,7 +1647,7 @@ void BossMonsterMode()
                 score += damage * 10;
                 score += combo * 2;
 
-                screenClear();
+                ConsoleUI::Clear();
 
                 cout << "========== 몬스터 처치 모드 ==========" << endl;
                 cout << "[정답!] 공격 성공!" << endl;
@@ -1676,7 +1678,7 @@ void BossMonsterMode()
 
         if (bossHp > 0)
         {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "이 챕터의 문제를 모두 풀었습니다." << endl;
             cout << "현재 보스 HP: " << bossHp << " / " << maxBossHp << endl;
             cout << "다른 챕터를 선택해서 계속 공격하세요." << endl;
@@ -1685,7 +1687,7 @@ void BossMonsterMode()
         }
     }
 
-    screenClear();
+    ConsoleUI::Clear();
 
     cout << "========== 게임 결과 ==========" << endl;
 
@@ -1702,7 +1704,7 @@ void BossMonsterMode()
     _getch();
 }
 
-static void PrintTower(int floor, int lives, int combo, int score)
+void InfiniteTowerMode::PrintTower(int floor, int lives, int combo, int score)
 {
     string livesStr = "";
     for (int i = 0; i < lives; i++)  livesStr += " [O]";
@@ -1724,7 +1726,7 @@ static void PrintTower(int floor, int lives, int combo, int score)
 }
 
 // -- 내부 헬퍼: 4지선다 보기 만들기 ------------------------------
-static void BuildTowerChoices(const vector<Question>& pool, int qIdx,
+void InfiniteTowerMode::BuildTowerChoices(const vector<Question>& pool, int qIdx,
     vector<string>& choices, int& answerSlot)
 {
     const Question& cur = pool[qIdx];
@@ -1748,7 +1750,7 @@ static void BuildTowerChoices(const vector<Question>& pool, int qIdx,
 }
 
 // -- 난이도 단계 텍스트 -------------------------------------------
-static string GetDifficultyLabel(int floor)
+string InfiniteTowerMode::GetDifficultyLabel(int floor)
 {
     if (floor < 10)  return "[1] 입문";
     if (floor < 20)  return "[2] 초급";
@@ -1758,13 +1760,13 @@ static string GetDifficultyLabel(int floor)
 }
 
 // -- 보스층 여부 --------------------------------------------------
-static bool IsBossFloor(int floor)
+bool InfiniteTowerMode::IsBossFloor(int floor)
 {
     return floor > 0 && floor % 10 == 0;
 }
 
 // -- 최종 등급 텍스트 ---------------------------------------------
-static string GetGrade(int floor)
+string InfiniteTowerMode::GetGrade(int floor)
 {
     if (floor >= 50) return "  [ LEGEND  ] 당신은 탑의 정복자입니다!";
     if (floor >= 40) return "  [ MASTER  ] 놀라운 실력입니다!";
@@ -1775,13 +1777,13 @@ static string GetGrade(int floor)
 }
 
 // -- 공통 퀴즈 화면 출력 ------------------------------------------
-static void PrintQuizScreen(int floor, int lives, int combo, int score,
+void InfiniteTowerMode::PrintQuizScreen(int floor, int lives, int combo, int score,
     bool isBoss, int bossCorrect, int bossRequired,
     bool itemFloor, bool shieldUsed,
     const string& desc, const vector<string>& choices,
     int focusChoice)
 {
-    screenClear();
+    ConsoleUI::Clear();
 
     if (isBoss) {
         string livesStr = "";
@@ -1819,9 +1821,9 @@ static void PrintQuizScreen(int floor, int lives, int combo, int score,
 // =================================================================
 // * 메인 함수 *
 // =================================================================
-void InfiniteTowerMode() {
+void InfiniteTowerMode::Run() {
     // 1. [순서 변경] 게임 시작 전 룰 설명부터 출력
-    screenClear();
+    ConsoleUI::Clear();
     cout << "\n";
     cout << "  +----------------------------------+\n";
     cout << "  |        ** 무한의 탑  ** |\n";
@@ -1837,12 +1839,12 @@ void InfiniteTowerMode() {
     _getch();
 
     // 2. [그다음] 과목 선택 진행
-    string selectedFile = SelectSubjectMenu("무한의 탑: 오를 과목을 선택하세요");
+    string selectedFile = SubjectSelector::Select("무한의 탑: 오를 과목을 선택하세요");
     if (selectedFile.empty()) return;
 
-    vector<Question> quizList = LoadQuestionsFromCSV(selectedFile);
+    vector<Question> quizList = CSVUtil::LoadQuestions(selectedFile);
     if (quizList.size() < 4) {
-        screenClear();
+        ConsoleUI::Clear();
         cout << "  [오류] 문제가 4개 이상 필요합니다.\n";
         cout << "  아무 키나 눌러주세요...";
         _getch();
@@ -1871,7 +1873,7 @@ void InfiniteTowerMode() {
         // | 보스층 진입 연출                                       |
         // +-------------------------------------------------------+
         if (boss) {
-            screenClear();
+            ConsoleUI::Clear();
             cout << "\n";
             cout << "  +======================================+\n";
             cout << "  |  !! " << floor << "층  BOSS FLOOR 등장!  !!    |\n";
@@ -1932,7 +1934,7 @@ void InfiniteTowerMode() {
                             if (combo > bestCombo) bestCombo = combo;
                             score += 200 + (combo * 50);
                             correctCnt++;
-                            screenClear();
+                            ConsoleUI::Clear();
                             cout << "\n  [O] 정답! BOSS ["
                                 << bossCorrect << "/" << bossRequired << "]\n";
                             cout << "  아무 키나 누르면 계속...\n";
@@ -1943,7 +1945,7 @@ void InfiniteTowerMode() {
                             combo = 0;
                             bossCorrect = 0;
                             wrongCnt++;
-                            screenClear();
+                            ConsoleUI::Clear();
                             cout << "\n  [X] 오답! 정답: "
                                 << quizList[idx].answer
                                 << "\n  목숨 -1  보스전 처음부터!\n";
@@ -1962,7 +1964,7 @@ void InfiniteTowerMode() {
                 int oldLives = lives;
                 lives = min(lives + 1, maxLives);
                 score += 500;
-                screenClear();
+                ConsoleUI::Clear();
                 cout << "\n  [CLEAR!] BOSS 클리어!  목숨 +" << (lives - oldLives)
                     << " 보상!  +500점!\n";
                 cout << "  현재 목숨: ";
@@ -1980,7 +1982,7 @@ void InfiniteTowerMode() {
             // 5의 배수 층 = 아이템 층
             bool itemFloor = (floor % 5 == 0);
             if (itemFloor) {
-                screenClear();
+                ConsoleUI::Clear();
                 cout << "\n";
                 cout << "  +==============================+\n";
                 cout << "  |  [ITEM] " << floor << "층  아이템 층!     |\n";
@@ -2025,7 +2027,7 @@ void InfiniteTowerMode() {
                         score += gain;
                         correctCnt++;
 
-                        screenClear();
+                        ConsoleUI::Clear();
                         cout << "\n  [O] 정답!  +" << gain << "점";
                         if (combo >= 3)
                             cout << "  ** " << combo << " COMBO! **";
@@ -2047,7 +2049,7 @@ void InfiniteTowerMode() {
                             shieldUsed = true;
                             combo = 0;
                             wrongCnt++;
-                            screenClear();
+                            ConsoleUI::Clear();
                             cout << "\n  [X] 오답!  [SHIELD] 실드 발동 -> 목숨 보호!\n";
                             cout << "  정답: " << quizList[idx].answer << "\n";
                         }
@@ -2055,7 +2057,7 @@ void InfiniteTowerMode() {
                             lives--;
                             combo = 0;
                             wrongCnt++;
-                            screenClear();
+                            ConsoleUI::Clear();
                             cout << "\n  [X] 오답! 정답: "
                                 << quizList[idx].answer << "  목숨 -1\n";
                         }
@@ -2077,7 +2079,7 @@ GameOver:
     floor--;
     if (floor < 0) floor = 0;
 
-    screenClear();
+    ConsoleUI::Clear();
     cout << "\n";
     cout << "  +====================================+\n";
     cout << "  |           ** GAME OVER **          |\n";

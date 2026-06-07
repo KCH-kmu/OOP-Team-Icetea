@@ -9,27 +9,36 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-// 전역 문제 데이터 벡터
-vector<Question> PracticeQuestions;
-vector<Question> ExamQuestions;
+// ===== QuestionBank: 문제 데이터 보관/로딩 클래스 (싱글턴) =====
+// 싱글턴 인스턴스 접근자
+QuestionBank& QuestionBank::Instance()
+{
+    static QuestionBank instance; // 프로그램 전체에서 단 하나만 생성
+    return instance;
+}
+
+// 연습문제 벡터 접근자
+vector<Question>& QuestionBank::Practice() { return practice_; }
+// 시험문제 벡터 접근자
+vector<Question>& QuestionBank::Exam() { return exam_; }
 
 // ExamQuestionMake()에서 호출 - 현재는 비워둠 (MakeQuestion()이 CSV로 직접 저장)
-void AddExamQuestion(const Question& newQuestion)
+void QuestionBank::AddExam(const Question& newQuestion)
 {
     (void)newQuestion;
 }
 
 // ===================================================
 // 시작 시 ./QuestionData/ 폴더의 모든 CSV를 스캔하여
-// PracticeQuestions에 로드합니다.
+// practice_에 로드합니다.
 // (ExamQuestions는 시험모드 진입 시 직접 로드)
 // ===================================================
-void LoadAllQuestionData()
+void QuestionBank::LoadAll()
 {
     cout << "데이터를 로딩 중입니다..." << endl;
 
     // --- CSV-based: scan all .csv files in ./QuestionData/ ---
-    PracticeQuestions.clear();
+    practice_.clear();
     string folderPath = "./QuestionData";
 
     if (fs::exists(folderPath))
@@ -98,7 +107,7 @@ void LoadAllQuestionData()
                     q.level         = 0; try { if (fields.size() > 6) q.level = stoi(fields[6]); } catch (...) {}
                     q.commentary    = (fields.size() > 7) ? fields[7] : "";
                     q.searchKeyword = (fields.size() > 8) ? fields[8] : "";
-                    PracticeQuestions.push_back(q);
+                    practice_.push_back(q);
                 }
             }
             csvFile.close();
@@ -107,5 +116,5 @@ void LoadAllQuestionData()
 
     // ExamQuestions: loaded on demand inside ExamQuestionSolve() via SelectSubjectMenu() + CSV
 
-    cout << "로딩 완료! (총 " << PracticeQuestions.size() << "개 문제)" << endl;
+    cout << "로딩 완료! (총 " << practice_.size() << "개 문제)" << endl;
 }

@@ -11,7 +11,7 @@
 using namespace std;
 
 // 자연어(한글) 콘솔 출력 시 시각적 너비를 계산하는 함수 (한글=2, 영문=1)
-int GetVisualLength(const string& str)
+int MainMenu::GetVisualLength(const string& str)
 {
     int length = 0;
     for (size_t i = 0; i < str.length(); ++i)
@@ -38,7 +38,7 @@ int GetVisualLength(const string& str)
 }
 
 // 텍스트를 로고의 너비에 맞춰 가운데 정렬하여 출력하는 함수
-void PrintCentered(const string& text, int logoWidth)
+void MainMenu::PrintCentered(const string& text, int logoWidth)
 {
     int textLen = GetVisualLength(text);
     int padding = (logoWidth - textLen) / 2;
@@ -49,7 +49,7 @@ void PrintCentered(const string& text, int logoWidth)
 }
 
 // 로고를 파일에서 읽어오고, 로고의 최대 너비를 반환하는 함수
-string LoadLogoFromFile(string filename, int& outMaxWidth)
+string MainMenu::LoadLogoFromFile(string filename, int& outMaxWidth)
 {
     ifstream file(filename);
     string logo = "";
@@ -84,7 +84,7 @@ string LoadLogoFromFile(string filename, int& outMaxWidth)
     return logo;
 }
 
-void ShowGameModeMenu(int logoWidth)
+void MainMenu::ShowGameModeMenu(int logoWidth)
 {
     string chooseList[2] = { "1. 몬스터 처치", "2. 무한모드" };
     int focus = 1;
@@ -92,7 +92,7 @@ void ShowGameModeMenu(int logoWidth)
 
     do
     {
-        screenClear();
+        ConsoleUI::Clear();
 
         PrintCentered("=== 게임모드 ===", logoWidth);
         cout << endl;
@@ -143,15 +143,15 @@ void ShowGameModeMenu(int logoWidth)
         }
         else if (getkey == KEY_ENTER)
         {
-            screenClear();
+            ConsoleUI::Clear();
 
             if (focus == 1)
             {
-                BossMonsterMode();
+                GameMode* bossMode = new BossMonsterMode(); bossMode->Run(); delete bossMode;
             }
             else if (focus == 2)
             {
-                InfiniteTowerMode();
+                GameMode* towerMode = new InfiniteTowerMode(); towerMode->Run(); delete towerMode;
             }
         }
         else if (getkey == KEY_ESC)
@@ -161,7 +161,7 @@ void ShowGameModeMenu(int logoWidth)
     } while (1);
 }
 
-void ShowMainMenu()
+void MainMenu::Show()
 {
     int logoWidth = 0;
     string projectLogo = LoadLogoFromFile("ProjectLogo.txt", logoWidth);
@@ -176,7 +176,7 @@ void ShowMainMenu()
 
     do
     {
-        screenClear();
+        ConsoleUI::Clear();
 
 
         size_t logoPos = 0, logoNext;
@@ -237,24 +237,24 @@ void ShowMainMenu()
         }
         else if (getkey == KEY_ENTER)
         {
-            screenClear();
+            ConsoleUI::Clear();
             switch (focus)
             {
             case 1:
                 // NEW
-                PracticeQuestionSolve();
+                QuizManager().SolvePractice();
                 break;
             case 2:
-                ExamQuestionSolve();
+                QuizManager().SolveExam();
                 break;
             case 3:
                 ShowGameModeMenu(logoWidth);
                 break;
             case 4:
-                PracticeQuestionSearch();
+                QuestionSearch().RunPractice();
                 break;
             case 5:
-                MakeQuestion(); // 통합 문제 제작 함수
+                QuestionMaker().Run(); // 통합 문제 제작 함수
                 break;
             }
         }
